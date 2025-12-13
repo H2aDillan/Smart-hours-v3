@@ -5,13 +5,17 @@ const JOBS_KEY = "jobs";
 const ACTIVE_JOB_KEY = "activeJobId";
 const RATE_KEY = "rate";
 
-// Jobs: [{id, name, createdAt, history:[{id, tag, note, start, end, durationMs, rate, earnings}]}]
 let jobs = JSON.parse(localStorage.getItem(JOBS_KEY) || "[]");
 let activeJobId = localStorage.getItem(ACTIVE_JOB_KEY) || "";
 
 // =========================================================
 // DOM
 // =========================================================
+const menuBtn = document.getElementById("menuBtn");
+const menuBackdrop = document.getElementById("menuBackdrop");
+const menuDrawer = document.getElementById("menuDrawer");
+const closeMenuBtn = document.getElementById("closeMenuBtn");
+
 const jobBtn = document.getElementById("jobBtn");
 const jobNameEl = document.getElementById("jobName");
 const jobHint = document.getElementById("jobHint");
@@ -32,7 +36,9 @@ const timerEl = document.getElementById("timer");
 const startBtn = document.getElementById("startBtn");
 
 const historyBtn = document.getElementById("historyBtn");
+const sheetBackdrop = document.getElementById("sheetBackdrop");
 const historySheet = document.getElementById("historySheet");
+const sheetHeader = document.getElementById("sheetHeader");
 const closeHistory = document.getElementById("closeHistory");
 const historyList = document.getElementById("historyList");
 const jobFilter = document.getElementById("jobFilter");
@@ -65,18 +71,56 @@ let running = false;
 let startTime = 0;
 let accumulated = 0;
 
-let pendingSessionStartISO = null; // captures real start moment for save modal
-let deleteTarget = null; // {jobId, sessionId}
-let editTarget = null;   // {jobId, sessionId}
+let pendingSessionStartISO = null;
+let deleteTarget = null;
+let editTarget = null;
 
-// history sheet state
-let sheetLevel = "mid"; // "mid" | "full"
+// Sheet behavior
+const SHEET_MIN = 40;
+const SHEET_MAX = 85;
+const SHEET_CLOSE = 18;
+
 let sheetClosingTimer = null;
 
-// swipe tracking
-let touchStartY = 0;
-let touchStartT = 0;
-let swipeArmed = false;
+// Drag state
+let drag = {
+  active: false,
+  mode: null,
+  startY: 0,
+  startH: SHEET_MIN,
+  startT: 0
+};
+
+// =========================================================
+// MENU DRAWER (left -> right)
+// =========================================================
+function openMenu() {
+  menuBackdrop.classList.remove("hidden");
+  menuDrawer.classList.remove("hidden");
+  menuDrawer.setAttribute("aria-hidden", "false");
+  requestAnimationFrame(() => menuDrawer.classList.add("open"));
+}
+
+function closeMenu() {
+  menuDrawer.classList.remove("open");
+  menuDrawer.setAttribute("aria-hidden", "true");
+  menuBackdrop.classList.add("hidden");
+  setTimeout(() => {
+    menuDrawer.classList.add("hidden");
+  }, 220);
+}
+
+menuBtn.addEventListener("click", () => {
+  openMenu();
+});
+
+menuBackdrop.addEventListener("click", () => {
+  closeMenu();
+});
+
+closeMenuBtn.addEventListener("click", () => {
+  closeMenu();
+});
 
 // =========================================================
 // HELPERS
@@ -131,6 +175,33 @@ function uid() {
   return "id_" + Math.random().toString(16).slice(2) + Date.now().toString(16);
 }
 
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n));
+}
+
+function getViewportH() {
+  return Math.max(1, window.innerHeight || document.documentElement.clientHeight);
+}
+
+function getSheetH() {
+  const v = parseFloat(getComputedStyle(historySheet).getPropertyValue("--sheetH")) || SHEET_MIN;
+  return v;
+}
+
+function setSheetH(vh, snap = false) {
+  const v = clamp(vh, SHEET_CLOSE, SHEET_MAX);
+  historySheet.style.setProperty("--sheetH", v.toFixed(2));
+  if (snap) {
+    historySheet.style.transition = "transform 220ms ease, height 180ms ease";
+  } else {
+    historySheet.style.transition = "transform 220ms ease, height 0ms linear";
+  }
+}
+
+function restoreSheetTransition() {
+  historySheet.style.transition = "transform 220ms ease, height 160ms ease";
+}
+
 function formatTime(ms) {
   const s = ms / 1000;
   const h = String(Math.floor(s / 3600)).padStart(2, "0");
@@ -166,8 +237,22 @@ function resetTimerUI() {
   startBtn.classList.add("start");
 }
 
+function isScrollable(el) {
+  return el && el.scrollHeight > el.clientHeight + 2;
+}
+function atTop(el) {
+  return !el || el.scrollTop <= 1;
+}
+function atBottom(el) {
+  if (!el) return true;
+  return (el.scrollTop + el.clientHeight) >= (el.scrollHeight - 1);
+}
+function isInteractive(target) {
+  return !!target.closest("button, input, select, textarea, a");
+}
+
 // =========================================================
-// JOB MODAL OPEN/CLOSE
+// JOB MODAL
 // =========================================================
 function openJobModal() {
   jobNameInput.value = "";
@@ -181,37 +266,41 @@ function openJobModal() {
   jobModal.classList.remove("hidden");
   setTimeout(() => jobNameInput.focus(), 50);
 }
-
 function closeJobModal() {
   jobModal.classList.add("hidden");
 }
 
 // =========================================================
-// HISTORY SHEET OPEN/CLOSE + LEVELS
+// HISTORY SHEET OPEN/CLOSE
 // =========================================================
-function setSheetLevel(level) {
-  sheetLevel = level;
-  historySheet.classList.remove("level-mid", "level-full");
-  historySheet.classList.add(level === "full" ? "level-full" : "level-mid");
-}
-
 function openHistorySheet() {
   clearTimeout(sheetClosingTimer);
+
+  sheetBackdrop.classList.remove("hidden");
   historySheet.classList.remove("hidden");
+
+  setSheetH(SHEET_MIN, true);
+  restoreSheetTransition();
+
   requestAnimationFrame(() => {
     historySheet.classList.add("open");
-    setSheetLevel("mid");
   });
 }
 
 function closeHistorySheet() {
   historySheet.classList.remove("open");
+  sheetBackdrop.classList.add("hidden");
+
   sheetClosingTimer = setTimeout(() => {
     historySheet.classList.add("hidden");
-    historySheet.classList.remove("level-mid", "level-full");
-    sheetLevel = "mid";
+    setSheetH(SHEET_MIN, true);
+    restoreSheetTransition();
   }, 230);
 }
+
+sheetBackdrop.addEventListener("click", () => {
+  closeHistorySheet();
+});
 
 // =========================================================
 // HISTORY FILTER
@@ -231,11 +320,7 @@ function populateJobFilter() {
     jobFilter.appendChild(opt);
   });
 
-  if (hasActiveJob()) {
-    jobFilter.value = activeJobId;
-  } else {
-    jobFilter.value = "all";
-  }
+  jobFilter.value = hasActiveJob() ? activeJobId : "all";
 }
 
 // =========================================================
@@ -310,11 +395,9 @@ function openSaveSessionModal() {
   saveSessionModal.classList.remove("hidden");
   setTimeout(() => tagInput.focus(), 50);
 }
-
 function closeSaveSessionModal() {
   saveSessionModal.classList.add("hidden");
 }
-
 function commitSession(tagText, noteText) {
   const job = getJob(activeJobId);
   if (!job) return;
@@ -349,19 +432,16 @@ function openDeleteConfirm(jobId, sessionId) {
   deleteTarget = { jobId, sessionId };
   deleteModal.classList.remove("hidden");
 }
-
 function closeDeleteConfirm() {
   deleteTarget = null;
   deleteModal.classList.add("hidden");
 }
-
 function deleteSession(jobId, sessionId) {
   const job = getJob(jobId);
   if (!job || !job.history) return;
   job.history = job.history.filter(s => s.id !== sessionId);
   saveJobs();
 }
-
 function openEditModal(jobId, sessionId) {
   const job = getJob(jobId);
   if (!job) return;
@@ -384,12 +464,10 @@ function openEditModal(jobId, sessionId) {
 
   editModal.classList.remove("hidden");
 }
-
 function closeEditModal() {
   editTarget = null;
   editModal.classList.add("hidden");
 }
-
 function saveEdit() {
   if (!editTarget) return;
 
@@ -438,6 +516,117 @@ setInterval(() => {
   const rate = parseFloat(rateInput.value) || 0;
   earningsEl.textContent = `$${calcEarnings(rate, elapsed).toFixed(2)}`;
 }, 10);
+
+// =========================================================
+// SHEET GESTURES (DRAG + OVERSCROLL FOLLOW + SNAP)
+// =========================================================
+function startDrag(y) {
+  drag.active = true;
+  drag.mode = null;
+  drag.startY = y;
+  drag.startT = Date.now();
+  drag.startH = parseFloat(getComputedStyle(historySheet).getPropertyValue("--sheetH")) || SHEET_MIN;
+}
+
+function shouldSheetTakeOver(dy, target) {
+  if (target.closest("#sheetHeader") && !target.closest("#closeHistory")) return true;
+  if (isInteractive(target)) return false;
+
+  const scrollable = isScrollable(historyList);
+  if (!scrollable) return true;
+
+  if (dy > 0 && atTop(historyList)) return true;
+  if (dy < 0 && atBottom(historyList)) return true;
+  return false;
+}
+
+function applyDrag(y) {
+  const vh = getViewportH();
+  const dy = y - drag.startY;
+  const deltaVh = (dy / vh) * 100;
+  const newH = drag.startH - deltaVh;
+  const v = clamp(newH, SHEET_CLOSE, SHEET_MAX);
+  historySheet.style.setProperty("--sheetH", v.toFixed(2));
+  historySheet.style.transition = "transform 220ms ease, height 0ms linear";
+}
+
+function endDrag(y) {
+  if (!drag.active) return;
+
+  const endT = Date.now();
+  const dt = Math.max(1, endT - drag.startT);
+  const dy = y - drag.startY;
+  const vy = dy / dt;
+  const speed = Math.abs(vy);
+
+  const currentH = parseFloat(getComputedStyle(historySheet).getPropertyValue("--sheetH")) || SHEET_MIN;
+
+  restoreSheetTransition();
+
+  if (currentH <= SHEET_CLOSE + 1) {
+    closeHistorySheet();
+    drag.active = false;
+    drag.mode = null;
+    return;
+  }
+
+  const quick = speed > 0.6 && Math.abs(dy) > 45;
+
+  if (quick) {
+    if (dy < 0) {
+      historySheet.style.setProperty("--sheetH", SHEET_MAX);
+    } else {
+      if (currentH > SHEET_MIN + 6) {
+        historySheet.style.setProperty("--sheetH", SHEET_MIN);
+      } else {
+        closeHistorySheet();
+      }
+    }
+    drag.active = false;
+    drag.mode = null;
+    return;
+  }
+
+  historySheet.style.setProperty("--sheetH", clamp(currentH, SHEET_CLOSE, SHEET_MAX).toFixed(2));
+  drag.active = false;
+  drag.mode = null;
+}
+
+historySheet.addEventListener("touchstart", (e) => {
+  if (historySheet.classList.contains("hidden")) return;
+  const t = e.touches[0];
+  startDrag(t.clientY);
+}, { passive: true });
+
+historySheet.addEventListener("touchmove", (e) => {
+  if (!drag.active) return;
+  const t = e.touches[0];
+  const y = t.clientY;
+  const dy = y - drag.startY;
+
+  if (!drag.mode) {
+    if (Math.abs(dy) < 6) return;
+    drag.mode = shouldSheetTakeOver(dy, e.target) ? "drag" : "scroll";
+  }
+
+  if (drag.mode === "drag") {
+    e.preventDefault();
+    applyDrag(y);
+  }
+}, { passive: false });
+
+historySheet.addEventListener("touchend", (e) => {
+  if (!drag.active) return;
+  const t = e.changedTouches[0];
+  endDrag(t.clientY);
+}, { passive: true });
+
+historySheet.addEventListener("touchcancel", () => {
+  if (!drag.active) return;
+  restoreSheetTransition();
+  drag.active = false;
+  drag.mode = null;
+}, { passive: true });
 
 // =========================================================
 // EVENTS
@@ -555,88 +744,6 @@ saveEditBtn.addEventListener("click", () => {
 });
 
 // =========================================================
-// SWIPE ANYWHERE INSIDE THE HISTORY SHEET
-// - Expand when content is at bottom and user swipes up
-// - Shrink/close when content is at top and user swipes down
-// =========================================================
-function isScrollable(el) {
-  return el && el.scrollHeight > el.clientHeight + 2;
-}
-
-function atTop(el) {
-  return !el || el.scrollTop <= 1;
-}
-
-function atBottom(el) {
-  if (!el) return true;
-  return (el.scrollTop + el.clientHeight) >= (el.scrollHeight - 1);
-}
-
-historySheet.addEventListener("touchstart", (e) => {
-  // only when sheet is open
-  if (historySheet.classList.contains("hidden")) return;
-
-  // Don’t hijack taps on buttons/inputs/selects
-  if (e.target.closest("button, input, select, textarea")) {
-    swipeArmed = false;
-    return;
-  }
-
-  const t = e.touches[0];
-  touchStartY = t.clientY;
-  touchStartT = Date.now();
-  swipeArmed = true;
-}, { passive: true });
-
-historySheet.addEventListener("touchend", (e) => {
-  if (!swipeArmed) return;
-  swipeArmed = false;
-
-  const endT = Date.now();
-  const dt = Math.max(1, endT - touchStartT);
-
-  const t = e.changedTouches[0];
-  const endY = t.clientY;
-  const dy = endY - touchStartY; // +down, -up
-
-  const velocity = Math.abs(dy) / dt; // px/ms
-
-  // thresholds
-  const UP_THRESH = -55;
-  const DOWN_THRESH = 70;
-
-  const scrollable = isScrollable(historyList);
-  const top = scrollable ? atTop(historyList) : true;
-  const bottom = scrollable ? atBottom(historyList) : true;
-
-  // Expand only if user is at the bottom limit (or list isn't scrollable)
-  if (dy <= UP_THRESH && sheetLevel === "mid" && bottom) {
-    setSheetLevel("full");
-    return;
-  }
-
-  // Shrink/close only if user is at the top limit (or list isn't scrollable)
-  const wantsDown =
-    (dy >= DOWN_THRESH && dt <= 320) ||      // quick swipe down
-    (dy >= 140) ||                          // big pull down
-    (dy > 90 && velocity > 0.55);           // fast down
-
-  if (wantsDown && top) {
-    if (sheetLevel === "full") {
-      setSheetLevel("mid");
-    } else {
-      closeHistorySheet();
-    }
-    return;
-  }
-
-  // Gentle down while full and at top => snap back to mid (feel nicer)
-  if (sheetLevel === "full" && dy > 45 && top) {
-    setSheetLevel("mid");
-  }
-}, { passive: true });
-
-// =========================================================
 // INIT
 // =========================================================
 ensureActiveJobValid();
@@ -651,3 +758,11 @@ if (!hasActiveJob()) {
 
 populateJobFilter();
 renderHistory();
+
+window.addEventListener("resize", () => {
+  if (!historySheet.classList.contains("hidden")) {
+    const h = parseFloat(getComputedStyle(historySheet).getPropertyValue("--sheetH")) || SHEET_MIN;
+    historySheet.style.setProperty("--sheetH", clamp(h, SHEET_CLOSE, SHEET_MAX).toFixed(2));
+    restoreSheetTransition();
+  }
+});
