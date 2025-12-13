@@ -34,7 +34,7 @@ body {
   gap: 6px;
   padding: 10px;
   cursor: pointer;
-  z-index: 32; /* below history (35/40) and modals (50) */
+  z-index: 32;
 }
 
 .menu-btn span {
@@ -70,9 +70,7 @@ body {
   flex-direction: column;
 }
 
-.menu-drawer.open {
-  transform: translateX(0);
-}
+.menu-drawer.open { transform: translateX(0); }
 
 .menu-header {
   padding: 16px 14px;
@@ -120,7 +118,7 @@ body {
 }
 
 /* =========================
-   JOB BUTTON (smaller)
+   JOB BUTTON
 ========================= */
 .job-btn {
   padding: 8px 14px;
@@ -141,7 +139,6 @@ body {
   line-height: 1;
 }
 
-/* pulse when no job */
 .job-btn.pulse {
   border-color: #00ff66;
   animation: pulseGlow 1.6s infinite;
@@ -153,7 +150,6 @@ body {
   100% { box-shadow: 0 0 0 rgba(0,255,102,0); }
 }
 
-/* hint */
 .job-hint {
   margin-top: 8px;
   font-size: 12px;
@@ -199,7 +195,6 @@ body {
   gap: 14px;
 }
 
-/* LOCKED STATE: dim */
 .locked-ui {
   opacity: 0.35;
   filter: grayscale(0.7);
@@ -265,7 +260,7 @@ body {
 }
 
 /* =========================
-   HISTORY BACKDROP (tap outside closes)
+   HISTORY BACKDROP
 ========================= */
 .sheet-backdrop {
   position: fixed;
@@ -275,26 +270,22 @@ body {
 }
 
 /* =========================
-   HISTORY SHEET (draggable height)
+   HISTORY SHEET (draggable)
 ========================= */
 .sheet {
-  --sheetH: 40; /* in vh (controlled by JS) */
-
+  --sheetH: 40;
   position: fixed;
   left: 0;
   bottom: 0;
   width: 100%;
   height: calc(var(--sheetH) * 1vh);
-
   background: #0d0d0d;
   border-radius: 18px 18px 0 0;
   display: flex;
   flex-direction: column;
-
-  transform: translateY(100%); /* closed */
+  transform: translateY(100%);
   transition: transform 220ms ease, height 160ms ease;
   will-change: transform, height;
-
   z-index: 40;
 }
 
@@ -308,7 +299,7 @@ body {
   border-bottom: 1px solid #171717;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none; /* allow dragging */
+  touch-action: none;
 }
 
 .sheet-title {
@@ -331,7 +322,7 @@ body {
   cursor: pointer;
 }
 
-/* total row under X */
+/* total row */
 .sheet-total {
   padding: 10px 14px 0;
   display: flex;
@@ -351,28 +342,126 @@ body {
   font-size: 14px;
 }
 
+/* =========================
+   CUSTOM JOB FILTER BUTTON
+========================= */
 .sheet-filter {
   padding: 10px 14px 0;
 }
 
-.sheet-filter select {
+.job-filter-btn {
   width: 100%;
-  padding: 9px 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #2a2a2a;
+  background: #141414;
+  color: #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.job-filter-chev {
+  opacity: 0.8;
+  font-size: 14px;
+  transform: translateY(-1px);
+}
+
+/* =========================
+   JOB FILTER MODAL (clean app-like list)
+========================= */
+.filter-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 55;
+}
+
+.filter-card {
+  width: 92%;
+  max-width: 420px;
+  background: #0f0f0f;
+  border: 1px solid #1f1f1f;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.filter-head {
+  padding: 14px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #171717;
+}
+
+.filter-title {
+  font-weight: 900;
+  color: #e8e8e8;
+}
+
+.filter-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
   background: #141414;
   border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  color: #d6d6d6;
+  color: #cfcfcf;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-list {
+  max-height: 55vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-item {
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid #1f1f1f;
+  background: #141414;
+  color: #e6e6e6;
+  font-weight: 800;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.filter-item small {
+  color: #9a9a9a;
+  font-weight: 700;
+}
+
+.filter-item.active {
+  border-color: rgba(0,255,102,0.6);
+  box-shadow: 0 0 0 3px rgba(0,255,102,0.14);
 }
 
 .sheet-body {
   padding: 12px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y; /* allow scrolling, JS takes over only on overscroll */
+  touch-action: pan-y;
 }
 
 /* =========================
-   HISTORY ITEM (clean layout)
+   HISTORY ITEM
 ========================= */
 .history-item {
   background: #141414;
@@ -514,6 +603,4 @@ body {
 .modal-btn.danger { background: #b00020; color: #fff; }
 
 #deleteModal .modal h3,
-#deleteModal .modal .modal-sub {
-  text-align: center;
-}
+#deleteModal .modal .modal-sub { text-align: center; }
