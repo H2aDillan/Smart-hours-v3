@@ -8,6 +8,29 @@
 </head>
 <body>
 
+  <!-- MENU BUTTON (top-left) -->
+  <button id="menuBtn" class="menu-btn" aria-label="Open menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- MENU BACKDROP (tap outside closes) -->
+  <div id="menuBackdrop" class="menu-backdrop hidden"></div>
+
+  <!-- MENU DRAWER (left -> right, 40% width) -->
+  <aside id="menuDrawer" class="menu-drawer hidden" aria-hidden="true">
+    <div class="menu-header">
+      <div class="menu-title">Menu</div>
+      <button id="closeMenuBtn" class="menu-close" aria-label="Close menu">Back</button>
+    </div>
+
+    <div class="menu-body">
+      <!-- You can add menu items later -->
+      <div class="menu-item disabled">Coming soon</div>
+    </div>
+  </aside>
+
   <!-- HOURLY RATE -->
   <div class="rate-container" id="rateWrap">
     <span>$</span>
@@ -71,6 +94,9 @@
       </div>
     </div>
   </div>
+
+  <!-- BACKDROP FOR HISTORY (tap outside closes) -->
+  <div id="sheetBackdrop" class="sheet-backdrop hidden"></div>
 
   <!-- HISTORY PANEL -->
   <div id="historySheet" class="sheet hidden">
