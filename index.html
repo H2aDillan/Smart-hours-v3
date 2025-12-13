@@ -1,90 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-
-  <!-- ✅ MOBILE VIEWPORT (IMPORTANT) -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Smart Hours</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- Hourly Rate -->
-  <div class="rate-container">
+  <!-- HOURLY RATE -->
+  <div class="rate-container" id="rateWrap">
     <span>$</span>
-    <input id="rateInput" type="number" placeholder="Hourly rate" min="0" step="0.01">
+    <input id="rateInput" type="number" placeholder="Hourly rate" min="0" step="0.01" />
     <span>/hr</span>
   </div>
 
-  <!-- Main App -->
-  <div class="app">
+  <!-- MAIN APP -->
+  <div id="app" class="app">
+
+    <!-- JOB BUTTON (always enabled) -->
+    <button id="jobBtn" class="job-btn">
+      <span id="jobPlus" class="job-plus">＋</span>
+      <span id="jobName">Create Job</span>
+    </button>
+
+    <!-- FIRST TIME / NO JOB HINT -->
+    <div id="jobHint" class="job-hint hidden">
+      You must create a job before starting the timer.
+    </div>
+
     <div id="earnings">$0.00</div>
     <div id="timer">00:00:00.00</div>
-    <button id="btn" class="start">START</button>
+    <button id="startBtn" class="start-btn start">START</button>
   </div>
 
-  <!-- History Button -->
+  <!-- HISTORY BUTTON -->
   <button id="historyBtn" class="history-btn">History</button>
 
-  <!-- History Sheet -->
-  <div id="historySheet" class="sheet hidden">
-    <div class="sheet-header">
-      <div class="sheet-title">Session History</div>
-      <button id="closeHistory" class="sheet-close">✕</button>
-    </div>
-    <div id="historyList" class="sheet-body"></div>
-  </div>
-
-  <!-- Save Session Modal -->
-  <div id="modalOverlay" class="modal-overlay hidden">
+  <!-- CREATE JOB MODAL -->
+  <div id="jobModal" class="modal-overlay hidden">
     <div class="modal">
-      <h3>Save Session</h3>
-      <p class="modal-sub">Add a tag (optional)</p>
-      <input id="tagInput" type="text" placeholder="e.g. Mechanic, Driving">
+      <h3 id="jobModalTitle">Create Job Session</h3>
+      <p class="modal-sub" id="jobModalSub">Enter a job name to continue.</p>
+
+      <label>Job name</label>
+      <input id="jobNameInput" type="text" placeholder="e.g. Trucking, Mechanic" />
+
       <div class="modal-actions">
-        <button id="discardTag" class="modal-btn cancel">Cancel</button>
-        <button id="saveTag" class="modal-btn save">Save</button>
+        <button id="cancelJobBtn" class="modal-btn cancel">Cancel</button>
+        <button id="saveJobBtn" class="modal-btn save">Save Job</button>
       </div>
     </div>
   </div>
 
-  <!-- Delete Confirm Modal -->
+  <!-- SAVE SESSION MODAL -->
+  <div id="saveSessionModal" class="modal-overlay hidden">
+    <div class="modal">
+      <h3>Save Session</h3>
+      <p class="modal-sub">Add details for this session.</p>
+
+      <label>Tag</label>
+      <input id="tagInput" type="text" placeholder="e.g. Driving, Mechanic" />
+
+      <label>Note</label>
+      <input id="noteInput" type="text" placeholder="Optional note" />
+
+      <div class="modal-actions">
+        <button id="discardSessionBtn" class="modal-btn cancel">Discard</button>
+        <button id="saveSessionBtn" class="modal-btn save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY PANEL -->
+  <div id="historySheet" class="sheet hidden">
+    <div class="sheet-header" id="sheetHeader">
+      <div class="sheet-title">Session History</div>
+      <button id="closeHistory" class="sheet-close">✕</button>
+    </div>
+
+    <!-- TOTAL -->
+    <div class="sheet-total">
+      <span class="sheet-total-label">Total</span>
+      <span id="sheetTotal" class="sheet-total-amount">$0.00</span>
+    </div>
+
+    <!-- DROPDOWN FILTER (jobs) -->
+    <div class="sheet-filter">
+      <select id="jobFilter"></select>
+    </div>
+
+    <div id="historyList" class="sheet-body"></div>
+  </div>
+
+  <!-- DELETE CONFIRM MODAL -->
   <div id="deleteModal" class="modal-overlay hidden">
     <div class="modal">
       <h3>Delete Session</h3>
       <p class="modal-sub">This action cannot be undone.</p>
+
       <div class="modal-actions">
-        <button id="cancelDelete" class="modal-btn cancel">Cancel</button>
-        <button id="confirmDelete" class="modal-btn danger">Delete</button>
+        <button id="cancelDeleteBtn" class="modal-btn cancel">Cancel</button>
+        <button id="confirmDeleteBtn" class="modal-btn danger">Delete</button>
       </div>
     </div>
   </div>
 
-  <!-- Edit Session Modal -->
+  <!-- EDIT SESSION MODAL -->
   <div id="editModal" class="modal-overlay hidden">
     <div class="modal">
       <h3>Edit Session</h3>
 
       <label>Rename tag</label>
-      <input id="editTag" type="text">
+      <input id="editTag" type="text" />
 
       <label>Date</label>
-      <input id="editDate" type="date">
+      <input id="editDate" type="date" />
 
       <label>Start at</label>
-      <input id="editStart" type="time" step="1">
+      <input id="editStart" type="time" />
 
       <label>Stop at</label>
-      <input id="editEnd" type="time" step="1">
+      <input id="editEnd" type="time" />
 
       <label>Hourly rate</label>
-      <input id="editRate" type="number" step="0.01">
+      <input id="editRate" type="number" step="0.01" />
+
+      <label>Note</label>
+      <input id="editNote" type="text" placeholder="Optional note" />
 
       <div class="modal-actions">
-        <button id="cancelEdit" class="modal-btn cancel">Cancel</button>
-        <button id="saveEdit" class="modal-btn save">Save</button>
+        <button id="cancelEditBtn" class="modal-btn cancel">Cancel</button>
+        <button id="saveEditBtn" class="modal-btn save">Save</button>
       </div>
     </div>
   </div>
