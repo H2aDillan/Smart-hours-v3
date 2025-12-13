@@ -111,12 +111,29 @@
       <span id="sheetTotal" class="sheet-total-amount">$0.00</span>
     </div>
 
-    <!-- DROPDOWN FILTER (jobs) -->
+    <!-- DROPDOWN FILTER (CUSTOM UI) -->
     <div class="sheet-filter">
-      <select id="jobFilter"></select>
+      <button id="jobFilterBtn" class="job-filter-btn" type="button">
+        <span id="jobFilterLabel">All jobs</span>
+        <span class="job-filter-chev">▾</span>
+      </button>
+
+      <!-- Keep the original select for storage/logic, but hide it -->
+      <select id="jobFilter" class="hidden"></select>
     </div>
 
     <div id="historyList" class="sheet-body"></div>
+  </div>
+
+  <!-- JOB FILTER MODAL (custom dropdown) -->
+  <div id="jobFilterModal" class="filter-overlay hidden">
+    <div class="filter-card" role="dialog" aria-modal="true">
+      <div class="filter-head">
+        <div class="filter-title">Select Job</div>
+        <button id="closeJobFilter" class="filter-close" aria-label="Close">✕</button>
+      </div>
+      <div id="jobFilterList" class="filter-list"></div>
+    </div>
   </div>
 
   <!-- DELETE CONFIRM MODAL -->
