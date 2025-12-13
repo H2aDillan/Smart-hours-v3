@@ -17,6 +17,109 @@ body {
 .hidden { display: none !important; }
 
 /* =========================
+   MENU BUTTON (top-left)
+========================= */
+.menu-btn {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  cursor: pointer;
+  z-index: 32; /* below history (35/40) and modals (50) */
+}
+
+.menu-btn span {
+  display: block;
+  height: 2.5px;
+  width: 100%;
+  background: #e8e8e8;
+  border-radius: 99px;
+  opacity: 0.95;
+}
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 33;
+}
+
+.menu-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 40vw;
+  max-width: 360px;
+  min-width: 260px;
+  background: #0d0d0d;
+  border-right: 1px solid #1a1a1a;
+  transform: translateX(-100%);
+  transition: transform 220ms ease;
+  z-index: 34;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-drawer.open {
+  transform: translateX(0);
+}
+
+.menu-header {
+  padding: 16px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #171717;
+}
+
+.menu-title {
+  font-weight: 900;
+  color: #e8e8e8;
+  letter-spacing: 0.2px;
+}
+
+.menu-close {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #cfcfcf;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.menu-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-item {
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid #1f1f1f;
+  background: #141414;
+  color: #e6e6e6;
+  font-weight: 700;
+}
+
+.menu-item.disabled {
+  color: #9a9a9a;
+  font-weight: 650;
+}
+
+/* =========================
    JOB BUTTON (smaller)
 ========================= */
 .job-btn {
@@ -162,31 +265,40 @@ body {
 }
 
 /* =========================
-   HISTORY SHEET (Swipe states)
+   HISTORY BACKDROP (tap outside closes)
+========================= */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 35;
+}
+
+/* =========================
+   HISTORY SHEET (draggable height)
 ========================= */
 .sheet {
+  --sheetH: 40; /* in vh (controlled by JS) */
+
   position: fixed;
   left: 0;
   bottom: 0;
   width: 100%;
+  height: calc(var(--sheetH) * 1vh);
+
   background: #0d0d0d;
   border-radius: 18px 18px 0 0;
   display: flex;
   flex-direction: column;
 
-  height: 40vh;              /* default mid */
-  transform: translateY(100%);/* closed position */
-  transition: transform 220ms ease, height 220ms ease;
+  transform: translateY(100%); /* closed */
+  transition: transform 220ms ease, height 160ms ease;
   will-change: transform, height;
+
   z-index: 40;
 }
 
-/* open/close */
 .sheet.open { transform: translateY(0); }
-
-/* levels */
-.sheet.level-mid { height: 40vh; }
-.sheet.level-full { height: 85vh; }
 
 .sheet-header {
   padding: 14px;
@@ -196,7 +308,7 @@ body {
   border-bottom: 1px solid #171717;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: pan-y;
+  touch-action: none; /* allow dragging */
 }
 
 .sheet-title {
@@ -255,6 +367,8 @@ body {
 .sheet-body {
   padding: 12px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y; /* allow scrolling, JS takes over only on overscroll */
 }
 
 /* =========================
