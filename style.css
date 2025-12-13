@@ -1,4 +1,3 @@
-/* ===== GLOBAL RESET ===== */
 * {
   margin: 0;
   padding: 0;
@@ -15,36 +14,77 @@ body {
   align-items: center;
 }
 
-/* ===== UTIL ===== */
-.hidden {
-  display: none !important;
-}
+.hidden { display: none !important; }
 
-/* ===== HOURLY RATE ===== */
-.rate-container {
-  margin-top: 20px;
+/* =========================
+   JOB BUTTON (smaller)
+========================= */
+.job-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #2a2a2a;
+  background: #141414;
+  color: #ffffff;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.job-plus {
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* pulse when no job */
+.job-btn.pulse {
+  border-color: #00ff66;
+  animation: pulseGlow 1.6s infinite;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 rgba(0,255,102,0); }
+  50% { box-shadow: 0 0 18px rgba(0,255,102,0.9); }
+  100% { box-shadow: 0 0 0 rgba(0,255,102,0); }
+}
+
+/* hint */
+.job-hint {
+  margin-top: 8px;
+  font-size: 12px;
   color: #9a9a9a;
+  opacity: 0.95;
+  text-align: center;
+  max-width: 320px;
+}
+
+/* =========================
+   HOURLY RATE
+========================= */
+.rate-container {
+  margin-top: 14px;
+  display: flex;
+  gap: 6px;
+  color: #9a9a9a;
+  align-items: center;
 }
 
 .rate-container input {
   width: 120px;
-  padding: 8px 10px;
+  padding: 8px;
   background: #1b1b1b;
   border: 1px solid #2e2e2e;
   border-radius: 10px;
   color: #d6d6d6;
   text-align: center;
+  outline: none;
 }
 
-.rate-container input::placeholder {
-  color: #6a6a6a;
-}
-
-/* ===== MAIN APP ===== */
+/* =========================
+   MAIN APP
+========================= */
 .app {
   flex: 1;
   width: 100%;
@@ -56,101 +96,170 @@ body {
   gap: 14px;
 }
 
+/* LOCKED STATE: dim */
+.locked-ui {
+  opacity: 0.35;
+  filter: grayscale(0.7);
+}
+
 #earnings {
   color: #00ff66;
   font-size: 42px;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 #timer {
   font-size: 34px;
-  color: #eaeaea;
+  color: #efefef;
 }
 
-/* ===== START / STOP BUTTON ===== */
-#btn {
+/* =========================
+   START BUTTON
+========================= */
+.start-btn {
   width: 240px;
   height: 60px;
   border-radius: 16px;
   border: none;
   font-size: 18px;
+  font-weight: 800;
   cursor: pointer;
 }
 
-.start {
+.start-btn.start {
   background: linear-gradient(135deg, #00ff88, #00c853);
   color: #000;
-  font-weight: 700;
 }
 
-.stop {
+.start-btn.stop {
   background: linear-gradient(135deg, #ff3b3b, #c62828);
   color: #fff;
-  font-weight: 700;
 }
 
-/* ===== HISTORY BUTTON ===== */
+.start-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* =========================
+   HISTORY BUTTON
+========================= */
 .history-btn {
   position: fixed;
   bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
   padding: 12px 26px;
   border-radius: 999px;
   background: #141414;
-  color: #bdbdbd;
   border: 1px solid #2a2a2a;
-  font-size: 15px;
+  color: #bdbdbd;
+  font-size: 14px;
+  cursor: pointer;
 }
 
-/* ===== HISTORY SHEET ===== */
+.history-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* =========================
+   HISTORY SHEET (Swipe states)
+========================= */
 .sheet {
   position: fixed;
   left: 0;
-  right: 0;
   bottom: 0;
-  height: 40vh;
+  width: 100%;
   background: #0d0d0d;
-  border-top-left-radius: 18px;
-  border-top-right-radius: 18px;
+  border-radius: 18px 18px 0 0;
   display: flex;
   flex-direction: column;
+
+  height: 40vh;              /* default mid */
+  transform: translateY(100%);/* closed position */
+  transition: transform 220ms ease, height 220ms ease;
+  will-change: transform, height;
+  z-index: 40;
 }
 
+/* open/close */
+.sheet.open { transform: translateY(0); }
+
+/* levels */
+.sheet.level-mid { height: 40vh; }
+.sheet.level-full { height: 85vh; }
+
 .sheet-header {
-  padding: 14px 16px;
+  padding: 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #1a1a1a;
+  border-bottom: 1px solid #171717;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
 }
 
 .sheet-title {
-  font-weight: 600;
+  font-weight: 700;
   color: #e8e8e8;
 }
 
 .sheet-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
   background: #1a1a1a;
   border: 1px solid #2a2a2a;
   color: #9a9a9a;
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
-/* ===== HISTORY LIST ===== */
+/* total row under X */
+.sheet-total {
+  padding: 10px 14px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sheet-total-label {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.sheet-total-amount {
+  color: #00ff66;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.sheet-filter {
+  padding: 10px 14px 0;
+}
+
+.sheet-filter select {
+  width: 100%;
+  padding: 9px 10px;
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  color: #d6d6d6;
+}
+
 .sheet-body {
   padding: 12px;
   overflow-y: auto;
 }
 
-/* ===== HISTORY ITEM ===== */
+/* =========================
+   HISTORY ITEM (clean layout)
+========================= */
 .history-item {
   background: #141414;
   border: 1px solid #1f1f1f;
@@ -162,156 +271,135 @@ body {
 .history-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
   gap: 12px;
+}
+
+.history-left {
+  flex: 1;
+  min-width: 0;
 }
 
 .history-tag {
   color: #ffffff;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-weight: 750;
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .history-meta {
   color: #9a9a9a;
   font-size: 12.5px;
-  line-height: 1.4;
+  line-height: 1.35;
+}
+
+.history-note {
+  margin-top: 4px;
+  color: #bdbdbd;
+  font-size: 12.5px;
 }
 
 .history-right {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 6px;
 }
 
 .history-earnings {
   color: #00ff66;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-weight: 800;
 }
 
-/* ===== HISTORY ACTION BUTTONS ===== */
-.history-edit {
-  background: #00c853;
-  color: #000;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
+.history-edit,
 .history-delete {
-  background: #b00020;
-  color: #fff;
+  width: 90px;
+  height: 34px;
+  border-radius: 10px;
   border: none;
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 12px;
-}
-
-/* ===== MODALS (BASE) ===== */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.modal {
-  background: #101010;
-  border-radius: 18px;
-  padding: 18px;
-  width: 100%;
-  max-width: 380px;
+.history-edit {
+  background: #00c853;
+  color: #000;
 }
 
-.modal h3 {
-  font-size: 18px;
-  margin-bottom: 6px;
+.history-delete {
+  background: #b00020;
+  color: #fff;
+}
+
+/* =========================
+   MODALS
+========================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+.modal {
+  background: #101010;
+  padding: 18px;
+  border-radius: 18px;
+  width: 90%;
+  max-width: 380px;
 }
 
 .modal-sub {
   color: #9a9a9a;
   font-size: 13px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .modal label {
-  display: block;
-  margin-top: 14px;
-  margin-bottom: 4px;
   font-size: 12px;
-  color: #a0a0a0;
-  font-weight: 500;
+  color: #aaa;
+  margin-top: 10px;
+  display: block;
 }
 
 .modal input {
   width: 100%;
   padding: 10px;
+  margin-top: 4px;
   background: #181818;
   border: 1px solid #2a2a2a;
   border-radius: 10px;
-  color: #d6d6d6;
-  font-size: 14px;
+  color: #ddd;
 }
 
-/* ===== MODAL ACTIONS ===== */
 .modal-actions {
   display: flex;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .modal-btn {
   flex: 1;
   height: 44px;
   border-radius: 12px;
-  font-weight: 600;
   border: none;
+  font-weight: 800;
+  cursor: pointer;
 }
 
-.cancel {
-  background: #2a2a2a;
-  color: #cfcfcf;
-}
+.modal-btn.cancel { background: #2a2a2a; color: #ccc; }
+.modal-btn.save { background: #00c853; color: #000; }
+.modal-btn.danger { background: #b00020; color: #fff; }
 
-.save {
-  background: linear-gradient(135deg, #00ff66, #00c853);
-  color: #000;
-}
-
-.danger {
-  background: #b00020;
-  color: #fff;
-}
-
-/* ===== DELETE MODAL CENTERING ===== */
 #deleteModal .modal h3,
 #deleteModal .modal .modal-sub {
   text-align: center;
-}
-
-/* ===== EDIT MODAL POLISH ===== */
-#editModal .modal {
-  position: relative;
-}
-
-#editModal .modal::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 20px;
-  right: 20px;
-  height: 3px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #00ff66, #00c853);
-}
-
-#editModal .modal h3 {
-  text-align: center;
-  margin-bottom: 14px;
 }
