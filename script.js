@@ -44,6 +44,13 @@ const historyList = document.getElementById("historyList");
 const jobFilter = document.getElementById("jobFilter");
 const sheetTotal = document.getElementById("sheetTotal");
 
+/* Custom filter UI */
+const jobFilterBtn = document.getElementById("jobFilterBtn");
+const jobFilterLabel = document.getElementById("jobFilterLabel");
+const jobFilterModal = document.getElementById("jobFilterModal");
+const closeJobFilter = document.getElementById("closeJobFilter");
+const jobFilterList = document.getElementById("jobFilterList");
+
 const saveSessionModal = document.getElementById("saveSessionModal");
 const tagInput = document.getElementById("tagInput");
 const noteInput = document.getElementById("noteInput");
@@ -92,7 +99,7 @@ let drag = {
 };
 
 // =========================================================
-// MENU DRAWER (left -> right)
+// MENU DRAWER
 // =========================================================
 function openMenu() {
   menuBackdrop.classList.remove("hidden");
@@ -110,17 +117,9 @@ function closeMenu() {
   }, 220);
 }
 
-menuBtn.addEventListener("click", () => {
-  openMenu();
-});
-
-menuBackdrop.addEventListener("click", () => {
-  closeMenu();
-});
-
-closeMenuBtn.addEventListener("click", () => {
-  closeMenu();
-});
+menuBtn.addEventListener("click", () => openMenu());
+menuBackdrop.addEventListener("click", () => closeMenu());
+closeMenuBtn.addEventListener("click", () => closeMenu());
 
 // =========================================================
 // HELPERS
@@ -181,11 +180,6 @@ function clamp(n, a, b) {
 
 function getViewportH() {
   return Math.max(1, window.innerHeight || document.documentElement.clientHeight);
-}
-
-function getSheetH() {
-  const v = parseFloat(getComputedStyle(historySheet).getPropertyValue("--sheetH")) || SHEET_MIN;
-  return v;
 }
 
 function setSheetH(vh, snap = false) {
@@ -298,12 +292,57 @@ function closeHistorySheet() {
   }, 230);
 }
 
-sheetBackdrop.addEventListener("click", () => {
-  closeHistorySheet();
-});
+sheetBackdrop.addEventListener("click", () => closeHistorySheet());
 
 // =========================================================
-// HISTORY FILTER
+// JOB FILTER (native select kept hidden, custom modal used)
+// =========================================================
+function setJobFilterLabel() {
+  const selected = jobFilter.value || "all";
+  if (selected === "all") {
+    jobFilterLabel.textContent = "All jobs";
+    return;
+  }
+  const j = getJob(selected);
+  jobFilterLabel.textContent = j ? j.name : "All jobs";
+}
+
+function openJobFilterModal() {
+  buildJobFilterList();
+  jobFilterModal.classList.remove("hidden");
+}
+
+function closeJobFilterModal() {
+  jobFilterModal.classList.add("hidden");
+}
+
+function buildJobFilterList() {
+  jobFilterList.innerHTML = "";
+
+  const current = jobFilter.value || "all";
+
+  const addItem = (value, title, meta = "") => {
+    const row = document.createElement("div");
+    row.className = "filter-item" + (current === value ? " active" : "");
+    row.dataset.value = value;
+
+    row.innerHTML = `
+      <div>${title}</div>
+      ${meta ? `<small>${meta}</small>` : `<small></small>`}
+    `;
+    jobFilterList.appendChild(row);
+  };
+
+  addItem("all", "All jobs", `${jobs.length} job${jobs.length === 1 ? "" : "s"}`);
+
+  jobs.forEach(j => {
+    const count = (j.history || []).length;
+    addItem(j.id, j.name, `${count} session${count === 1 ? "" : "s"}`);
+  });
+}
+
+// =========================================================
+// HISTORY FILTER (populate hidden select)
 // =========================================================
 function populateJobFilter() {
   jobFilter.innerHTML = "";
@@ -321,6 +360,7 @@ function populateJobFilter() {
   });
 
   jobFilter.value = hasActiveJob() ? activeJobId : "all";
+  setJobFilterLabel();
 }
 
 // =========================================================
@@ -518,7 +558,7 @@ setInterval(() => {
 }, 10);
 
 // =========================================================
-// SHEET GESTURES (DRAG + OVERSCROLL FOLLOW + SNAP)
+// SHEET GESTURES (unchanged)
 // =========================================================
 function startDrag(y) {
   drag.active = true;
@@ -710,7 +750,30 @@ historyBtn.addEventListener("click", () => {
 
 closeHistory.addEventListener("click", () => closeHistorySheet());
 
-jobFilter.addEventListener("change", () => renderHistory());
+/* Open custom filter modal */
+jobFilterBtn.addEventListener("click", () => {
+  openJobFilterModal();
+});
+
+closeJobFilter.addEventListener("click", () => {
+  closeJobFilterModal();
+});
+
+jobFilterModal.addEventListener("click", (e) => {
+  if (!e.target.closest(".filter-card")) closeJobFilterModal();
+});
+
+jobFilterList.addEventListener("click", (e) => {
+  const row = e.target.closest(".filter-item");
+  if (!row) return;
+
+  const value = row.dataset.value || "all";
+  jobFilter.value = value;
+
+  setJobFilterLabel();
+  closeJobFilterModal();
+  renderHistory();
+});
 
 historyList.addEventListener("click", (e) => {
   const editBtn = e.target.closest("[data-edit]");
