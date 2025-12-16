@@ -32,7 +32,7 @@
         .rate-box { display: flex; align-items: center; border-bottom: 1px solid #222; padding-bottom: 1px; }
         #hourlyRate { background: transparent; border: none; color: white; font-size: 1.1rem; text-align: center; width: 55px; outline: none; font-weight: 300; }
 
-        /* Sidebar Menu Slider */
+        /* Sidebar Menu */
         .side-menu {
             position: fixed; top: 0; left: 0; width: 75%; height: 100%;
             background: #0f0f0f; z-index: 210;
@@ -51,15 +51,22 @@
             font-weight: 800; letter-spacing: 1px; cursor: pointer;
         }
 
-        /* Modals (Settings & Save) */
-        #settingsPanel, #saveModal {
+        /* Modals */
+        #settingsPanel, #saveModal, #jobModal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 300; align-items: center; justify-content: center;
         }
-        .modal-content { background: #111; padding: 30px; border-radius: 20px; width: 80%; border: 1px solid #222; text-align: center; }
-        .modal-content input { width: 100%; padding: 14px; margin: 18px 0; background: #000; border: 1px solid #333; color: white; border-radius: 10px; outline: none; }
+        .modal-content { background: #111; padding: 30px; border-radius: 20px; width: 85%; border: 1px solid #222; text-align: center; }
+        .modal-content input, .modal-content textarea { 
+            width: 100%; padding: 14px; margin: 10px 0; background: #000; border: 1px solid #333; 
+            color: white; border-radius: 10px; outline: none; box-sizing: border-box; font-family: inherit;
+        }
 
-        /* Main UI positioning */
+        .modal-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-cancel { background: #333; color: white; flex: 1; padding: 14px; border: none; border-radius: 8px; font-weight: bold; }
+        .btn-save { background: #32CD32; color: black; flex: 1; padding: 14px; border: none; border-radius: 8px; font-weight: bold; }
+
+        /* Main UI */
         .main-stage {
             position: absolute; top: 250px; left: 50%;
             transform: translateX(-50%); text-align: center; width: 100%;
@@ -69,11 +76,7 @@
         .timer-text { font-size: 3.5rem; font-weight: 200; margin-bottom: 20px; opacity: 0; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
         .visible { opacity: 1; }
 
-        /* Controls Shifting Animation */
-        .controls-row {
-            display: flex; align-items: center; justify-content: center;
-            position: relative; width: 300px; height: 55px;
-        }
+        .controls-row { display: flex; align-items: center; justify-content: center; position: relative; width: 300px; height: 55px; }
         button.action {
             height: 48px; width: 130px; font-size: 0.8rem; font-weight: bold;
             border-radius: 8px; border: none; cursor: pointer; text-transform: uppercase;
@@ -84,20 +87,44 @@
         .btn-break { background-color: #FFD700; color: #000; opacity: 0; pointer-events: none; left: 50%; transform: translateX(-50%); z-index: 1; }
         .btn-break.active { opacity: 1; pointer-events: auto; transform: translateX(5%); }
 
-        /* Dashboard */
+        /* Dashboard & New Job UI */
         .dashboard-panel {
             position: fixed; bottom: 0; left: 0; width: 100%; height: 70vh;
             background: rgba(10, 10, 10, 0.98); backdrop-filter: blur(25px);
             border-top: 1px solid rgba(255, 255, 255, 0.08); z-index: 90;
-            transform: translateY(calc(70vh - 55px)); transition: transform 0.6s ease;
+            transform: translateY(calc(70vh - 55px)); transition: transform 0.6s ease, box-shadow 0.3s ease;
             border-radius: 25px 25px 0 0;
         }
         .dashboard-panel.expanded { transform: translateY(0); }
-        .dashboard-handle { height: 55px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+        .dashboard-panel.success-glow { box-shadow: 0 -10px 40px rgba(50, 205, 50, 0.4); border-top: 1px solid rgba(50, 205, 50, 0.6); }
+
+        .dashboard-handle { 
+            height: 55px; display: flex; align-items: center; justify-content: center; 
+            padding: 0 25px; cursor: pointer; position: relative;
+        }
+        .handle-content { display: flex; flex-direction: column; align-items: center; }
         .drag-indicator { width: 40px; height: 4px; background: #2a2a2a; border-radius: 2px; margin-bottom: 8px; }
-        .dashboard-handle span { font-size: 0.65rem; color: #fff; letter-spacing: 2.5px; font-weight: 600; }
+        .handle-label { font-size: 0.65rem; color: #fff; letter-spacing: 2.5px; font-weight: 600; }
+
+        .plus-icon { 
+            position: absolute; right: 25px; width: 24px; height: 24px; 
+            border: 1.5px solid #fff; border-radius: 50%; display: flex; 
+            align-items: center; justify-content: center; font-size: 1.2rem;
+        }
+
         .dashboard-content { padding: 10px 25px; height: calc(100% - 60px); overflow-y: auto; }
-        .history-item { padding: 18px 0; border-bottom: 1px solid #161616; display: flex; justify-content: space-between; align-items: center; }
+        .job-group { margin-bottom: 25px; }
+        .job-header { 
+            padding: 10px 0; border-bottom: 1px solid #333; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: flex-end;
+        }
+        .job-name { font-size: 0.8rem; color: #888; letter-spacing: 1px; font-weight: bold; }
+        .history-item { padding: 15px 0; border-bottom: 1px solid #161616; display: flex; justify-content: space-between; align-items: flex-start; }
+        .history-info { flex: 1; }
+        .history-tag { font-size: 0.6rem; color: #fff; font-weight: 600; margin-bottom: 2px; }
+        .history-note { font-size: 0.55rem; color: #666; font-style: italic; }
+        .history-dur { font-size: 0.8rem; color: #444; }
+        .history-earnings { color: #32CD32; font-weight: 700; font-size: 1rem; }
     </style>
 </head>
 <body>
@@ -112,10 +139,7 @@
     </header>
 
     <div id="sideMenu" class="side-menu">
-        <div class="menu-nav-header">
-            <span class="menu-title">MENU</span>
-            <button id="closeMenu" class="close-menu-btn">CLOSE</button>
-        </div>
+        <div class="menu-nav-header"><span class="menu-title">MENU</span><button id="closeMenu" class="close-menu-btn">CLOSE</button></div>
         <div style="padding: 20px;"><p style="color: #444; font-size: 0.7rem;">SESSIONS & TOOLS</p></div>
         <button id="openSettings" class="blue-settings-btn">SETTINGS</button>
     </div>
@@ -123,19 +147,34 @@
     <div id="settingsPanel">
         <div class="modal-content">
             <h3>Global Settings</h3>
-            <select id="currencySelector" style="width:100%; padding:10px; margin:20px 0; background:#000; color:white; border:1px solid #333; border-radius:8px;">
+            <select id="currencySelector">
                 <option value="$">$ USD</option><option value="€">€ EUR</option><option value="£">£ GBP</option><option value="¥">¥ JPY</option>
             </select>
-            <button id="closeSettings" style="width:100%; padding:14px; background:#32CD32; border:none; border-radius:8px; font-weight:bold;">DONE</button>
+            <button id="closeSettings" class="btn-save" style="width:100%">DONE</button>
+        </div>
+    </div>
+
+    <div id="jobModal">
+        <div class="modal-content">
+            <h3>New Job Session</h3>
+            <p style="font-size:0.7rem; color:#666;">Organize your next logs under a specific job name</p>
+            <input type="text" id="jobInput" placeholder="e.g. Paystub 1" autocomplete="off">
+            <div class="modal-btns">
+                <button id="cancelJob" class="btn-cancel">CANCEL</button>
+                <button id="confirmJob" class="btn-save">CREATE JOB</button>
+            </div>
         </div>
     </div>
 
     <div id="saveModal">
         <div class="modal-content">
-            <h3>Save Session</h3>
-            <p style="font-size:0.7rem; color:#666;">Enter a tag for this entry</p>
-            <input type="text" id="sessionTag" placeholder="e.g. Project Alpha" autocomplete="off">
-            <button id="confirmSave" style="width:100%; padding:14px; background:#32CD32; border:none; border-radius:8px; font-weight:bold;">SAVE TO DASHBOARD</button>
+            <h3>Session Log</h3>
+            <input type="text" id="sessionTag" placeholder="Tag (Optional)" autocomplete="off">
+            <textarea id="sessionNote" placeholder="Notes (Optional)" rows="3"></textarea>
+            <div class="modal-btns">
+                <button id="cancelSave" class="btn-cancel">CANCEL</button>
+                <button id="confirmSave" class="btn-save">SAVE</button>
+            </div>
         </div>
     </div>
 
@@ -151,9 +190,15 @@
     </main>
 
     <div id="dashboard" class="dashboard-panel">
-        <div class="dashboard-handle"><div class="drag-indicator"></div><span>DASHBOARD</span></div>
+        <div class="dashboard-handle">
+            <div class="handle-content">
+                <div class="drag-indicator"></div>
+                <span class="handle-label">DASHBOARD</span>
+            </div>
+            <div id="addJobBtn" class="plus-icon">+</div>
+        </div>
         <div id="historyList" class="dashboard-content">
-            <p style="color: #222; text-align: center; margin-top: 40px;">No sessions logged</p>
+            <p id="emptyMsg" style="color: #222; text-align: center; margin-top: 40px;">No sessions logged</p>
         </div>
     </div>
 
@@ -168,17 +213,29 @@
               sideMenu = document.getElementById('sideMenu'),
               overlay = document.getElementById('overlay'),
               saveModal = document.getElementById('saveModal'),
-              sessionTagInput = document.getElementById('sessionTag'),
-              historyList = document.getElementById('historyList');
+              jobModal = document.getElementById('jobModal'),
+              jobInput = document.getElementById('jobInput'),
+              historyList = document.getElementById('historyList'),
+              dashboard = document.getElementById('dashboard');
 
         let startTime, timerInterval, isRunning = false, isPaused = false, 
             pausedTime = 0, totalPaused = 0, currentCurrency = "$",
-            tempEarnings = "$0.00", tempDuration = "00:00:00:00";
+            tempEarnings = "$0.00", tempDuration = "00:00:00:00",
+            currentJobName = "Default Session";
 
+        // Navigation & Modals
         document.getElementById('menuBtn').onclick = () => { sideMenu.classList.add('open'); overlay.style.display = 'block'; };
         document.getElementById('closeMenu').onclick = overlay.onclick = () => { sideMenu.classList.remove('open'); overlay.style.display = 'none'; };
-        document.getElementById('openSettings').onclick = () => { document.getElementById('settingsPanel').style.display = 'flex'; };
-        document.getElementById('closeSettings').onclick = () => { document.getElementById('settingsPanel').style.display = 'none'; };
+        document.getElementById('openSettings').onclick = () => document.getElementById('settingsPanel').style.display = 'flex';
+        document.getElementById('closeSettings').onclick = () => document.getElementById('settingsPanel').style.display = 'none';
+        
+        document.getElementById('addJobBtn').onclick = (e) => { e.stopPropagation(); jobModal.style.display = 'flex'; };
+        document.getElementById('cancelJob').onclick = () => jobModal.style.display = 'none';
+        document.getElementById('confirmJob').onclick = () => {
+            currentJobName = jobInput.value || "Paystub " + (document.querySelectorAll('.job-group').length + 1);
+            jobModal.style.display = 'none';
+            jobInput.value = "";
+        };
 
         currencySelector.onchange = (e) => { 
             currentCurrency = e.target.value; 
@@ -186,6 +243,7 @@
             updateUI(); 
         };
 
+        // Timer Logic
         actionBtn.onclick = () => {
             if (!isRunning) {
                 isRunning = true; startTime = Date.now(); totalPaused = 0;
@@ -198,9 +256,6 @@
                 tempEarnings = earningsDisplay.textContent;
                 tempDuration = timerDisplay.textContent;
                 saveModal.style.display = 'flex';
-                actionBtn.textContent = 'START'; actionBtn.classList.remove('active');
-                breakBtn.classList.remove('active');
-                breakBtn.textContent = 'BREAK'; breakBtn.style.backgroundColor = '#FFD700';
             }
         };
 
@@ -209,15 +264,60 @@
             else { isPaused = false; totalPaused += (Date.now() - pausedTime); breakBtn.textContent = 'BREAK'; breakBtn.style.backgroundColor = '#FFD700'; }
         };
 
+        document.getElementById('cancelSave').onclick = () => {
+            saveModal.style.display = 'none';
+            resetSystem();
+        };
+
         document.getElementById('confirmSave').onclick = () => {
-            if (historyList.innerHTML.includes('No sessions')) historyList.innerHTML = '';
+            const tag = document.getElementById('sessionTag').value || "No Tag";
+            const note = document.getElementById('sessionNote').value;
+            saveToDashboard(tag, note);
+            saveModal.style.display = 'none';
+            resetSystem();
+            
+            // Success Feedback
+            dashboard.classList.add('success-glow');
+            setTimeout(() => dashboard.classList.remove('success-glow'), 1500);
+        };
+
+        function resetSystem() {
+            actionBtn.textContent = 'START'; actionBtn.classList.remove('active');
+            breakBtn.classList.remove('active');
+            breakBtn.textContent = 'BREAK'; breakBtn.style.backgroundColor = '#FFD700';
+            timerDisplay.textContent = "00:00:00:00";
+            earningsDisplay.textContent = currentCurrency + "0.00";
+            document.getElementById('sessionTag').value = "";
+            document.getElementById('sessionNote').value = "";
+        }
+
+        function saveToDashboard(tag, note) {
+            const emptyMsg = document.getElementById('emptyMsg');
+            if (emptyMsg) emptyMsg.remove();
+
+            let jobGroup = Array.from(document.querySelectorAll('.job-group')).find(g => g.dataset.name === currentJobName);
+            
+            if (!jobGroup) {
+                jobGroup = document.createElement('div');
+                jobGroup.className = 'job-group';
+                jobGroup.dataset.name = currentJobName;
+                jobGroup.innerHTML = `<div class="job-header"><span class="job-name">${currentJobName.toUpperCase()}</span></div><div class="job-logs"></div>`;
+                historyList.prepend(jobGroup);
+            }
+
+            const logContainer = jobGroup.querySelector('.job-logs');
             const div = document.createElement('div');
             div.className = 'history-item';
-            div.innerHTML = `<div><div style="font-size:0.55rem; color:#444; text-transform:uppercase;">${sessionTagInput.value || 'General'}</div><div style="font-weight:300;">${tempDuration}</div></div><div style="color:#32CD32; font-weight:700;">${tempEarnings}</div>`;
-            historyList.prepend(div);
-            saveModal.style.display = 'none';
-            sessionTagInput.value = "";
-        };
+            div.innerHTML = `
+                <div class="history-info">
+                    <div class="history-tag">${tag}</div>
+                    ${note ? `<div class="history-note">${note}</div>` : ''}
+                    <div class="history-dur">${tempDuration}</div>
+                </div>
+                <div class="history-earnings">${tempEarnings}</div>
+            `;
+            logContainer.prepend(div);
+        }
 
         function updateUI() {
             const elapsed = isRunning ? (Date.now() - startTime - totalPaused) : 0;
@@ -233,7 +333,7 @@
                    .map(v => v.toString().padStart(2,'0')).join(':');
         }
 
-        document.getElementById('dashboard').onclick = (e) => { if(e.target.closest('.dashboard-handle')) dashboard.classList.toggle('expanded'); };
+        dashboard.onclick = (e) => { if(e.target.closest('.dashboard-handle') && !e.target.closest('.plus-icon')) dashboard.classList.toggle('expanded'); };
     </script>
 </body>
 </html>
