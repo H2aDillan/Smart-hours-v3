@@ -1,266 +1,4408 @@
-<!DOCTYPE html>
+<!-- index.html (single file) -->
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pro Earnings Tracker</title>
-    <style>
-        :root { --accent: #32CD32; --bg: #050505; --panel: #111; --text-dim: #666; --blue: #007aff; --red: #ff3b30; --yellow: #FFD700; --card: #181818; }
-        body { background-color: var(--bg); margin: 0; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; color: white; overflow: hidden; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Timer + Tagged History</title>
+  <style>
+    :root{
+      --bg:#000;
+      --green:#00ff4c;
+      --red:#ff2a2a;
+      --orange:#ff9a22;
+      --text:#eaeaea;
 
-        /* Header & Icons */
-        .header { position: absolute; top: 0; width: 100%; height: 80px; display: flex; align-items: center; justify-content: space-between; padding: 0 25px; box-sizing: border-box; z-index: 100; }
-        .menu-icon, .stats-icon { cursor: pointer; width: 30px; display: flex; flex-direction: column; align-items: center; }
-        .bar { width: 24px; height: 2px; background-color: white; margin: 3.5px 0; }
-        .stats-bars { display: flex; align-items: flex-end; gap: 3px; height: 18px; }
-        .s-bar { width: 4px; background: white; border-radius: 1px; }
+      --sheetPeek:64px;
+      --sheetH:70vh;
 
-        /* Rate Input */
-        .rate-input-group { display: flex; flex-direction: column; align-items: center; }
-        .rate-label { font-size: 0.5rem; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 2px; font-weight: bold; }
-        #hourlyRate { background: transparent; border: none; border-bottom: 1px solid #222; color: white; font-size: 1.1rem; text-align: center; width: 55px; outline: none; }
+      --menuW:75vw;
+      --blue:#00bfff;
+    }
 
-        /* Sidebar Menu */
-        .side-menu { position: fixed; top: 0; left: 0; width: 75%; height: 100%; background: #0f0f0f; z-index: 210; transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); border-right: 1px solid #222; display: flex; flex-direction: column; }
-        .side-menu.open { transform: translateX(0); }
-        .menu-items { padding: 40px 25px; display: flex; flex-direction: column; gap: 35px; }
-        .menu-link { color: #fff; text-decoration: none; font-size: 1.2rem; font-weight: 300; letter-spacing: 1px; }
-        .blue-settings-btn { position: absolute; bottom: 25px; right: 20px; background: var(--blue); color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+    *{ box-sizing:border-box; margin:0; padding:0; }
 
-        /* Professional Modals */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 300; align-items: center; justify-content: center; }
-        .modal-card { background: var(--panel); padding: 30px; border-radius: 24px; width: 85%; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center; }
-        .modal-card input, .modal-card select, .modal-card textarea { width: 100%; padding: 15px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: white; border-radius: 12px; outline: none; box-sizing: border-box; }
-        .modal-footer { display: flex; gap: 12px; margin-top: 10px; }
-        .btn-m { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; }
+    body{
+      min-height:100vh;
+      background:var(--bg);
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+      overflow:hidden;
+    }
 
-        /* Main UI (Keyboard Stable) */
-        .main-stage { position: absolute; top: 250px; left: 50%; transform: translateX(-50%); text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .earnings-glow { font-size: 1.6rem; font-weight: 700; color: var(--accent); text-shadow: 0 0 20px rgba(50, 205, 50, 0.35); }
-        .timer-text { font-size: 3.5rem; font-weight: 200; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
-        #breakTimerDisplay { font-size: 1.2rem; color: var(--red); font-weight: bold; height: 20px; margin-top: 5px; visibility: hidden; }
-        #breakTimerDisplay.visible { visibility: visible; }
+    /* =========================
+       Menu icon (top-left)
+       ========================= */
+    .menu-btn{
+      position:fixed;
+      top:10px;
+      left:10px;
+      z-index:6;
+      width:44px;
+      height:44px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.04);
+      backdrop-filter: blur(10px);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 120ms ease, background 180ms ease, border-color 180ms ease;
+    }
+    .menu-btn:active{ transform:scale(0.97); }
+    .menu-btn:hover{ background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.18); }
 
-        .controls-row { display: flex; align-items: center; justify-content: center; position: relative; width: 300px; height: 55px; margin-top: 20px; }
-        button.action { height: 48px; width: 130px; font-size: 0.8rem; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; text-transform: uppercase; transition: 0.4s ease; position: absolute; }
-        .btn-start-stop { background-color: var(--accent); color: #000; z-index: 2; left: 50%; transform: translateX(-50%); }
-        .btn-start-stop.active { background-color: var(--red); color: #fff; transform: translateX(-105%); }
-        .btn-break { background-color: var(--yellow); color: #000; opacity: 0; pointer-events: none; left: 50%; transform: translateX(-50%); z-index: 1; }
-        .btn-break.active { opacity: 1; pointer-events: auto; transform: translateX(5%); }
-        .btn-break.stop-break { background-color: var(--red); color: #fff; }
+    .menu-icon{
+      width:20px;
+      height:14px;
+      position:relative;
+    }
+    .menu-icon span{
+      position:absolute;
+      left:0;
+      right:0;
+      height:2px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.92);
+      opacity:0.9;
+    }
+    .menu-icon span:nth-child(1){ top:0; }
+    .menu-icon span:nth-child(2){ top:6px; opacity:0.75; }
+    .menu-icon span:nth-child(3){ top:12px; }
 
-        /* Dashboard */
-        .dashboard-panel { position: fixed; bottom: 0; left: 0; width: 100%; height: 70vh; background: rgba(10, 10, 10, 0.98); backdrop-filter: blur(25px); border-top: 1px solid rgba(255,255,255,0.1); z-index: 90; transform: translateY(calc(70vh - 65px)); transition: transform 0.6s ease; border-radius: 30px 30px 0 0; }
-        .dashboard-panel.expanded { transform: translateY(0); }
-        .dashboard-handle { height: 65px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
-        .handle-label { font-size: 0.75rem; color: #fff; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; }
-        .plus-icon { position: absolute; right: 25px; width: 24px; height: 24px; border: 1.5px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    /* =========================
+       Stats icon (top-right)
+       ========================= */
+    .stats-btn{
+      position:fixed;
+      top:10px;
+      right:10px;
+      z-index:6;
+      width:44px;
+      height:44px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.04);
+      backdrop-filter: blur(10px);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 120ms ease, background 180ms ease, border-color 180ms ease;
+    }
+    .stats-btn:active{ transform:scale(0.97); }
+    .stats-btn:hover{ background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.18); }
 
-        /* Job Selector UI */
-        .job-nav-box { padding: 15px 25px; border-bottom: 1px solid #1a1a1a; display: flex; flex-direction: column; align-items: center; }
-        .job-select-wrapper { position: relative; width: 100%; max-width: 250px; background: #161616; border-radius: 12px; border: 1px solid #333; overflow: hidden; }
-        #jobSelector { width: 100%; background: transparent; color: var(--accent); border: none; padding: 12px 35px 12px 15px; font-size: 0.85rem; font-weight: 700; outline: none; appearance: none; text-align: center; }
-        .dropdown-arrow { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); pointer-events: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid var(--accent); }
+    .stats-icon{
+      width:22px;
+      height:18px;
+      display:flex;
+      align-items:flex-end;
+      gap:3px;
+    }
+    .bar{
+      width:5px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.90);
+      opacity:0.9;
+    }
+    .bar:nth-child(1){ height:7px; opacity:0.65; }
+    .bar:nth-child(2){ height:12px; opacity:0.80; }
+    .bar:nth-child(3){ height:16px; opacity:0.95; }
 
-        .dashboard-content { padding: 10px 20px; height: calc(100% - 150px); overflow-y: auto; }
-        .history-card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 12px; border: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-        .tag-name { font-size: 1.1rem; font-weight: 800; color: #fff; text-transform: uppercase; }
-        .meta-text { font-size: 0.65rem; color: var(--text-dim); }
-        .amount-text { color: var(--accent); font-size: 1.4rem; font-weight: 900; }
-    </style>
+    /* =========================
+       Hourly rate (top center)
+       ========================= */
+    .top-rate{
+      position:fixed;
+      top:12px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:5;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:0;
+      background:transparent;
+      border:none;
+      box-shadow:none;
+      backdrop-filter:none;
+    }
+
+    .top-rate label{
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:0.6px;
+      opacity:0.85;
+      white-space:nowrap;
+      margin:0;
+    }
+
+    .rate-input{
+      width:96px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:transparent;
+      color:var(--text);
+      padding:6px 8px;
+      outline:none;
+      font-size:13px;
+      font-weight:900;
+      font-variant-numeric: tabular-nums;
+      letter-spacing:0.2px;
+      text-align:center;
+      touch-action: manipulation;
+    }
+
+    .rate-input:focus{
+      border-color: rgba(0,255,76,0.40);
+      box-shadow: 0 0 0 3px rgba(0,255,76,0.08);
+    }
+
+    /* Center control */
+    .stage{
+      position:fixed;
+      inset:0;
+      display:grid;
+      place-items:center;
+      padding-top: 56px;
+      padding-bottom: calc(var(--sheetPeek) + 18px);
+    }
+
+    .control{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .timer-wrap{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      max-width:0;
+      opacity:0;
+      overflow:hidden;
+      transform:translateX(14px);
+      transition:
+        max-width 360ms ease,
+        opacity 240ms ease,
+        transform 360ms ease;
+      will-change:max-width, transform, opacity;
+    }
+
+    .timer{
+      font-variant-numeric: tabular-nums;
+      letter-spacing:0.6px;
+      font-size:22px;
+      font-weight:800;
+      white-space:nowrap;
+      user-select:none;
+      text-shadow: 0 0 18px rgba(255,255,255,0.12);
+    }
+
+    .earnings-float{
+      position:absolute;
+      left:50%;
+      bottom:76px;
+      transform:translate(-50%, 14px);
+      opacity:0;
+      pointer-events:none;
+      transition: transform 320ms ease, opacity 240ms ease;
+      will-change: transform, opacity;
+
+      font-variant-numeric: tabular-nums;
+      font-weight:900;
+      letter-spacing:0.4px;
+      font-size:33px;
+      color:rgba(0,255,76,0.95);
+      text-shadow:
+        0 0 18px rgba(0,255,76,0.22),
+        0 0 44px rgba(0,255,76,0.14);
+      white-space:nowrap;
+    }
+
+    .running .earnings-float{
+      opacity:1;
+      transform:translate(-50%, 0);
+    }
+
+    /* === TIMER BACK TO "BEFORE BREAK" BEHAVIOR ===
+       Break row is ABSOLUTE and does NOT affect the timer/button layout width/position.
+    */
+    .btn-stack{
+      position:relative;
+      width:180px;
+      height:64px; /* only the main button counts for layout (like before break) */
+      flex: 0 0 auto;
+    }
+
+    .action-btn{
+      width:180px;
+      height:64px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      font-weight:900;
+      letter-spacing:1px;
+      color:#001a08;
+      background:var(--green);
+      box-shadow:
+        0 0 18px rgba(0,255,76,0.28),
+        0 0 44px rgba(0,255,76,0.16);
+      transition:
+        background 220ms ease,
+        box-shadow 220ms ease,
+        transform 120ms ease;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .action-btn:active{ transform:scale(0.98); }
+
+    .running .timer-wrap{
+      max-width:260px;
+      opacity:1;
+      transform:translateX(0);
+    }
+
+    .running .action-btn{
+      background:var(--red);
+      color:#250000;
+      box-shadow:
+        0 0 18px rgba(255,42,42,0.28),
+        0 0 44px rgba(255,42,42,0.16);
+    }
+
+    /* Break row slides DOWN 0.5s after STOP appears
+       Absolute so it doesn't push/shift timer like before.
+       Break timer must slide out to the LEFT of the button WITHOUT moving the button.
+    */
+    .break-row{
+      position:absolute;
+      top: calc(64px + 10px);
+      left: 50%;
+      transform: translate(-50%, -12px);
+
+      width:180px;
+      height:64px;
+
+      opacity:0;
+      pointer-events:none;
+      transition: opacity 220ms ease, transform 280ms ease;
+      will-change: transform, opacity;
+      overflow: visible; /* allow left timer to extend outside */
+    }
+
+    .running .break-row{
+      opacity:1;
+      pointer-events:auto;
+      transform: translate(-50%, 0);
+      transition: opacity 220ms ease 500ms, transform 280ms ease 500ms; /* 0.5s delay */
+    }
+
+    .break-btn{
+      width:180px;
+      height:64px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      font-weight:900;
+      letter-spacing:1px;
+      color:#201000;
+      background:var(--orange);
+      box-shadow:
+        0 0 18px rgba(255,154,34,0.22),
+        0 0 44px rgba(255,154,34,0.14);
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: transform 120ms ease, background 180ms ease, box-shadow 180ms ease;
+      position:relative;
+      z-index:2; /* stay above timer if overlapping */
+    }
+    .break-btn:active{ transform: scale(0.985); }
+
+    /* Break active = STOP BREAK (red) */
+    .onbreak .break-btn{
+      background:var(--red);
+      color:#250000;
+      box-shadow:
+        0 0 18px rgba(255,42,42,0.28),
+        0 0 44px rgba(255,42,42,0.16);
+    }
+
+    /* Break timer slides out to the LEFT of the break button (button stays fixed) */
+    .break-timer{
+      position:absolute;
+      top:50%;
+      right: calc(100% + 10px); /* sit to the LEFT of the button */
+      transform: translate(12px, -50%); /* start slightly tucked in */
+      font-variant-numeric: tabular-nums;
+      letter-spacing:0.6px;
+      font-size:22px;
+      font-weight:900;
+      white-space:nowrap;
+      user-select:none;
+      color: rgba(255,154,34,0.95);
+      text-shadow:
+        0 0 18px rgba(255,154,34,0.22),
+        0 0 44px rgba(255,154,34,0.12);
+
+      opacity:0;
+      max-width:0;
+      overflow:hidden;
+      transition: opacity 220ms ease, max-width 260ms ease, transform 260ms ease;
+      will-change: opacity, transform, max-width;
+      z-index:1;
+      pointer-events:none; /* can't block button taps */
+    }
+
+    .onbreak .break-timer{
+      opacity:1;
+      max-width:220px;
+      transform: translate(0, -50%);
+    }
+
+    /* =========================
+       History sheet overlay
+       ========================= */
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.6);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 220ms ease;
+      z-index:10;
+    }
+    .overlay.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    .sheet{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      height:var(--sheetH);
+      border-top-left-radius:22px;
+      border-top-right-radius:22px;
+      background:rgba(18,18,18,0.92);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 -14px 34px rgba(0,0,0,0.55);
+      transform: translateY(var(--sheetY, calc(var(--sheetH) - var(--sheetPeek))));
+      transition: transform 260ms cubic-bezier(.2,.8,.2,1);
+      will-change: transform;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      touch-action:none;
+      z-index:11;
+    }
+    .sheet.no-transition{ transition:none; }
+
+    .sheet-header{
+      height:var(--sheetPeek);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      cursor:pointer;
+      user-select:none;
+      padding:0 14px;
+    }
+
+    .handle{
+      position:absolute;
+      top:10px;
+      left:50%;
+      transform:translateX(-50%);
+      width:68px;
+      height:6px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.22);
+    }
+
+    .sheet-title{
+      font-weight:900;
+      letter-spacing:0.8px;
+      font-size:14px;
+      opacity:0.92;
+      margin-top:12px;
+    }
+
+    .sheet-total-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between; /* CHANGED: allow search icon on left */
+      gap:10px;
+      padding:8px 14px 6px;
+      border-top:1px solid rgba(255,255,255,0.08);
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.03);
+      user-select:none;
+    }
+
+    /* NEW: search (left side of total row) */
+    .sheet-tools-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+      flex:1;
+    }
+
+    .search-btn{
+      width:38px;
+      height:38px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.04);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 120ms ease, background 180ms ease, border-color 180ms ease;
+      touch-action: manipulation;
+      flex:0 0 auto;
+    }
+    .search-btn:active{ transform:scale(0.98); }
+    .search-btn:hover{ background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.18); }
+    .search-btn svg{ width:18px; height:18px; opacity:0.92; }
+
+    .history-search-input{
+      height:38px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);
+      color:var(--text);
+      padding:0 12px;
+      outline:none;
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:0.2px;
+      font-variant-numeric: tabular-nums;
+
+      max-width:0;
+      opacity:0;
+      padding-left:0;
+      padding-right:0;
+      border-color: rgba(255,255,255,0.0);
+      background: rgba(255,255,255,0.0);
+      transition: max-width 260ms ease, opacity 180ms ease, padding 220ms ease, border-color 220ms ease, background 220ms ease;
+      overflow:hidden;
+    }
+    .sheet.search-open .history-search-input{
+      max-width: 340px;
+      opacity:1;
+      padding-left:12px;
+      padding-right:12px;
+      border-color: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+    .history-search-input:focus{
+      border-color: rgba(0,191,255,0.40);
+      box-shadow: 0 0 0 3px rgba(0,191,255,0.10);
+    }
+
+    .sheet-total-right{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:8px;
+      flex:0 0 auto;
+      white-space:nowrap;
+    }
+
+    .sheet-total-label{
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:0.6px;
+      color:rgba(255,255,255,0.92);
+      white-space:nowrap;
+    }
+
+    .sheet-total-value{
+      font-variant-numeric: tabular-nums;
+      font-weight:900;
+      letter-spacing:0.4px;
+      font-size:12px;
+      color:rgba(0,255,76,0.92);
+      text-shadow: 0 0 18px rgba(0,255,76,0.12);
+      white-space:nowrap;
+    }
+
+    /* NEW: export button row under total bar */
+    .sheet-actions-row{
+      padding:10px 14px 2px;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.02);
+    }
+
+    .export-btn{
+      width:100%;
+      height:48px;
+      border:none;
+      border-radius:16px;
+      cursor:pointer;
+      font-weight:900;
+      letter-spacing:0.8px;
+      color:#001018;
+      background:rgba(0,191,255,0.92);
+      box-shadow: 0 0 18px rgba(0,191,255,0.18);
+      transition: transform 120ms ease, box-shadow 180ms ease, background 180ms ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .export-btn:active{ transform:scale(0.99); }
+
+    .sheet-body{
+      flex:1;
+      overflow:auto;
+      padding:14px 14px 18px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .hint{
+      opacity:0.7;
+      font-size:13px;
+      line-height:1.4;
+      padding:10px 6px;
+    }
+
+    .history-list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:8px;
+    }
+
+    .history-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 12px;
+      border-radius:16px;
+      background:rgba(255,255,255,0.06);
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .history-left{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+      flex:1;
+    }
+
+    .tag-header{
+      font-weight:900;
+      letter-spacing:0.4px;
+      font-size:16px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 78vw;
+      line-height:1.15;
+    }
+
+    .duration-line{
+      font-variant-numeric: tabular-nums;
+      font-weight:900;
+      letter-spacing:0.4px;
+      font-size:14px;
+      opacity:0.95;
+      white-space:nowrap;
+      line-height:1.15;
+    }
+
+    .break-line{
+      font-variant-numeric: tabular-nums;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:0.3px;
+      color: rgba(255,154,34,0.92);
+      text-shadow: 0 0 18px rgba(255,154,34,0.12);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 78vw;
+      line-height:1.15;
+      opacity:0.95;
+    }
+
+    .clock-line{
+      font-variant-numeric: tabular-nums;
+      font-size:12px;
+      opacity:0.75;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 78vw;
+      line-height:1.15;
+    }
+
+    .date-line{
+      font-size:12px;
+      opacity:0.65;
+      white-space:nowrap;
+      line-height:1.15;
+    }
+
+    .notes-line{
+      font-size:12px;
+      opacity:0.78;
+      line-height:1.25;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 78vw;
+    }
+
+    .history-amount{
+      font-variant-numeric: tabular-nums;
+      font-weight:900;
+      letter-spacing:0.4px;
+      font-size:14px;
+      color:rgba(0,255,76,0.92);
+      white-space:nowrap;
+      text-shadow: 0 0 18px rgba(0,255,76,0.14);
+      align-self:center;
+      padding-left:6px;
+    }
+
+    /* =========================
+       Pages
+       ========================= */
+    .page{
+      position:fixed;
+      inset:0;
+      background:#000;
+      z-index:40;
+      display:none;
+      flex-direction:column;
+    }
+    .page.show{ display:flex; }
+
+    .page-top{
+      height:64px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.03);
+      backdrop-filter: blur(12px);
+    }
+    .back-btn{
+      width:44px;
+      height:44px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.04);
+      color:rgba(255,255,255,0.9);
+      font-weight:900;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 120ms ease;
+      touch-action: manipulation;
+    }
+    .back-btn:active{ transform:scale(0.97); }
+
+    .page-title{
+      font-weight:900;
+      letter-spacing:0.8px;
+      font-size:14px;
+      opacity:0.92;
+    }
+    .page-body{
+      flex:1;
+      overflow:auto;
+      padding:18px 14px 22px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* =========================
+       Stats UI
+       ========================= */
+    .stats-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding-top: 6px;
+    }
+
+    .stats-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+
+    .stats-card{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:18px;
+      padding:14px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      overflow:hidden;
+    }
+
+    .stats-card.full{ grid-column: 1 / -1; }
+
+    .stats-card-head{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .stats-card-title{
+      font-weight:900;
+      letter-spacing:0.7px;
+      font-size:13px;
+      opacity:0.95;
+      text-transform: uppercase;
+    }
+
+    .stats-card-sub{
+      font-size:12px;
+      opacity:0.70;
+      line-height:1.25;
+    }
+
+    .stats-big{
+      font-variant-numeric: tabular-nums;
+      font-size:18px;
+      font-weight:900;
+      letter-spacing:0.5px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .stats-mini{
+      font-size:12px;
+      opacity:0.75;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .pie-row{
+      display:flex;
+      gap:12px;
+      align-items:stretch;
+    }
+
+    .pie-wrap{
+      position:relative;
+      width:160px;
+      min-width:160px;
+      aspect-ratio: 1 / 1;
+      border-radius:18px;
+      background:rgba(0,0,0,0.22);
+      border:1px solid rgba(255,255,255,0.08);
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+    }
+
+    canvas#tagPie{
+      width:100%;
+      height:100%;
+      display:block;
+    }
+
+    .pie-center{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      pointer-events:none;
+      text-align:center;
+    }
+
+    .pie-center .center-num{
+      font-variant-numeric: tabular-nums;
+      font-weight:900;
+      font-size:16px;
+      letter-spacing:0.6px;
+      text-shadow: 0 0 18px rgba(255,255,255,0.10);
+    }
+    .pie-center .center-sub{
+      font-size:11px;
+      opacity:0.70;
+      margin-top:4px;
+      letter-spacing:0.5px;
+    }
+
+    .legend{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding:8px 8px;
+      border-radius:18px;
+      background:rgba(0,0,0,0.16);
+      border:1px solid rgba(255,255,255,0.08);
+      overflow:auto;
+    }
+
+    .legend-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 10px;
+      border-radius:14px;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    .legend-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+      flex:1;
+    }
+
+    .dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      box-shadow: 0 0 18px rgba(255,255,255,0.12);
+      flex:0 0 auto;
+    }
+
+    .legend-tag{
+      font-weight:900;
+      letter-spacing:0.3px;
+      font-size:12px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 100%;
+      opacity:0.92;
+    }
+
+    .legend-right{
+      font-variant-numeric: tabular-nums;
+      font-size:12px;
+      opacity:0.78;
+      white-space:nowrap;
+    }
+
+    .tag-table{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .tag-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 12px;
+      border-radius:16px;
+      background:rgba(0,0,0,0.16);
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    .tag-row-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+      flex:1;
+    }
+
+    .tag-row-name{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+    }
+
+    .tag-row-title{
+      font-weight:900;
+      letter-spacing:0.3px;
+      font-size:13px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 100%;
+    }
+
+    .tag-row-sub{
+      font-variant-numeric: tabular-nums;
+      font-size:12px;
+      opacity:0.72;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 100%;
+    }
+
+    .tag-row-amount{
+      font-variant-numeric: tabular-nums;
+      font-weight:900;
+      letter-spacing:0.4px;
+      font-size:13px;
+      color:rgba(0,255,76,0.92);
+      white-space:nowrap;
+      text-shadow: 0 0 18px rgba(0,255,76,0.12);
+    }
+
+    .empty-stats{
+      padding:14px 12px;
+      border-radius:18px;
+      border:1px dashed rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.03);
+      opacity:0.8;
+      line-height:1.35;
+      font-size:13px;
+    }
+
+    @media (max-width: 380px){
+      .pie-row{ flex-direction:column; }
+      .pie-wrap{ width:100%; min-width:unset; aspect-ratio: 16 / 10; }
+      .sheet.search-open .history-search-input{ max-width: 220px; }
+    }
+
+    /* =========================
+       Predictions UI
+       ========================= */
+    .pred-list{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .pred-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 12px;
+      border-radius:16px;
+      background:rgba(0,0,0,0.16);
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    .pred-left{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+      flex:1;
+    }
+
+    .pred-title{
+      font-weight:900;
+      letter-spacing:0.4px;
+      font-size:13px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+
+    .pred-sub{
+      font-variant-numeric: tabular-nums;
+      font-size:12px;
+      opacity:0.72;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+
+    .pred-amount{
+      font-variant-numeric: tabular-nums;
+      font-weight:900;
+      letter-spacing:0.4px;
+      font-size:13px;
+      color:rgba(0,255,76,0.92);
+      white-space:nowrap;
+      text-shadow: 0 0 18px rgba(0,255,76,0.12);
+      align-self:center;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:0.4px;
+      opacity:0.92;
+      white-space:nowrap;
+      width:max-content;
+      max-width:100%;
+    }
+
+    .chip .chip-dot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:rgba(0,255,76,0.92);
+      box-shadow: 0 0 18px rgba(0,255,76,0.14);
+      flex:0 0 auto;
+    }
+
+    .chip.warn .chip-dot{
+      background:rgba(255,42,42,0.92);
+      box-shadow: 0 0 18px rgba(255,42,42,0.14);
+    }
+
+    .two-col{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    /* =========================
+       Goals UI
+       ========================= */
+    .goals-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding-top: 8px;
+    }
+
+    .goal-card{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:18px;
+      padding:14px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .goal-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .goal-title{
+      font-weight:900;
+      letter-spacing:0.7px;
+      font-size:13px;
+      opacity:0.95;
+      text-transform: uppercase;
+    }
+
+    .goal-meta{
+      font-variant-numeric: tabular-nums;
+      font-size:12px;
+      opacity:0.75;
+      white-space:nowrap;
+    }
+
+    .goal-input-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .goal-target-pill{
+      flex:1;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);
+      color:rgba(255,255,255,0.92);
+      padding:12px 12px;
+      font-size:14px;
+      font-weight:900;
+      font-variant-numeric: tabular-nums;
+      letter-spacing:0.2px;
+      text-align:left;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      user-select:none;
+      touch-action: manipulation;
+      transition: transform 120ms ease, background 180ms ease, border-color 180ms ease;
+    }
+    .goal-target-pill:active{ transform:scale(0.995); }
+    .goal-target-pill:hover{
+      background:rgba(255,255,255,0.08);
+      border-color:rgba(255,255,255,0.16);
+    }
+    .goal-target-pill .pill-right{
+      font-size:12px;
+      opacity:0.65;
+      white-space:nowrap;
+    }
+
+    .goal-progress{
+      height:14px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.08);
+      overflow:hidden;
+      position:relative;
+      border:1px solid rgba(255,255,255,0.10);
+    }
+
+    .goal-fill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background: linear-gradient(90deg,
+        rgba(0,255,76,0.55),
+        rgba(0,255,76,0.95),
+        rgba(0,255,76,0.55)
+      );
+      background-size: 200% 100%;
+      animation: liquid 1200ms linear infinite;
+      box-shadow: 0 0 18px rgba(0,255,76,0.15);
+      transition: width 160ms ease;
+      will-change: width;
+    }
+
+    @keyframes liquid{
+      0%{ background-position: 0% 0%; }
+      100%{ background-position: 200% 0%; }
+    }
+
+    .goal-bottom{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .goal-left{
+      font-variant-numeric: tabular-nums;
+      font-size:12px;
+      opacity:0.85;
+      white-space:nowrap;
+    }
+
+    .goal-right{
+      font-variant-numeric: tabular-nums;
+      font-size:12px;
+      opacity:0.7;
+      white-space:nowrap;
+    }
+
+    /* =========================
+       Calendar UI
+       ========================= */
+    .cal-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding-top: 6px;
+    }
+
+    .cal-topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .cal-month{
+      font-weight:900;
+      letter-spacing:0.7px;
+      font-size:14px;
+      opacity:0.94;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .cal-nav{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .icon-btn{
+      width:44px;
+      height:44px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.04);
+      color:rgba(255,255,255,0.9);
+      font-weight:900;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 120ms ease, background 180ms ease, border-color 180ms ease;
+      touch-action: manipulation;
+      display:grid;
+      place-items:center;
+    }
+    .icon-btn:active{ transform:scale(0.97); }
+    .icon-btn:hover{ background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.18); }
+
+    .cal-grid{
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,0.10);
+      background:rgba(255,255,255,0.04);
+      overflow:hidden;
+    }
+
+    .cal-dow{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:0;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      background:rgba(0,0,0,0.16);
+    }
+    .cal-dow div{
+      padding:10px 0;
+      text-align:center;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:0.6px;
+      opacity:0.75;
+    }
+
+    .cal-days{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:0;
+    }
+
+    .cal-day{
+      position:relative;
+      min-height:58px;
+      padding:10px 8px 8px;
+      border-right:1px solid rgba(255,255,255,0.06);
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      background:transparent;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: background 140ms ease, transform 120ms ease;
+      user-select:none;
+    }
+    .cal-day:nth-child(7n){ border-right:none; }
+    .cal-day:active{ transform:scale(0.99); }
+
+    .cal-day.muted{
+      opacity:0.38;
+    }
+    .cal-day:hover{
+      background:rgba(255,255,255,0.04);
+    }
+
+    .cal-day.selected{
+      background:rgba(0,255,76,0.08);
+      outline:1px solid rgba(0,255,76,0.20);
+      outline-offset:-1px;
+    }
+
+    .cal-day.today::after{
+      content:"";
+      position:absolute;
+      top:9px;
+      right:10px;
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:rgba(0,191,255,0.95);
+      box-shadow: 0 0 18px rgba(0,191,255,0.18);
+      opacity:0.95;
+    }
+
+    .cal-num{
+      font-variant-numeric: tabular-nums;
+      font-weight:900;
+      font-size:12px;
+      opacity:0.92;
+    }
+
+    .cal-dots{
+      position:absolute;
+      left:8px;
+      right:8px;
+      bottom:8px;
+      display:flex;
+      gap:4px;
+      justify-content:flex-start;
+      align-items:center;
+      min-height:10px;
+    }
+    .cal-dot{
+      width:6px;
+      height:6px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.25);
+    }
+    .cal-dot.on{
+      background:rgba(0,255,76,0.92);
+      box-shadow: 0 0 14px rgba(0,255,76,0.14);
+    }
+
+    .cal-section{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      border-radius:18px;
+      padding:14px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .cal-section-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .cal-section-title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+
+    .cal-title{
+      font-weight:900;
+      letter-spacing:0.7px;
+      font-size:13px;
+      opacity:0.95;
+      text-transform: uppercase;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+
+    .cal-sub{
+      font-size:12px;
+      opacity:0.70;
+      line-height:1.25;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+
+    .add-btn{
+      height:44px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid rgba(0,255,76,0.28);
+      background:rgba(0,255,76,0.12);
+      color:rgba(0,255,76,0.96);
+      font-weight:900;
+      letter-spacing:0.6px;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 120ms ease, background 180ms ease, border-color 180ms ease;
+      touch-action: manipulation;
+      white-space:nowrap;
+    }
+    .add-btn:active{ transform:scale(0.99); }
+    .add-btn:hover{ background:rgba(0,255,76,0.16); border-color:rgba(0,255,76,0.36); }
+
+    .cal-list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:2px;
+    }
+
+    .cal-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 12px;
+      border-radius:16px;
+      background:rgba(0,0,0,0.16);
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    .cal-left{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+      flex:1;
+    }
+
+    .cal-job{
+      font-weight:900;
+      letter-spacing:0.3px;
+      font-size:14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+      opacity:0.95;
+    }
+
+    .cal-time{
+      font-variant-numeric: tabular-nums;
+      font-size:12px;
+      opacity:0.75;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+
+    .cal-notes{
+      font-size:12px;
+      opacity:0.72;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+
+    .del-btn{
+      width:44px;
+      height:44px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.10);
+      background:rgba(255,255,255,0.04);
+      color:rgba(255,255,255,0.88);
+      font-weight:900;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 120ms ease, background 180ms ease;
+      touch-action: manipulation;
+      flex:0 0 auto;
+      display:grid;
+      place-items:center;
+    }
+    .del-btn:active{ transform:scale(0.97); }
+    .del-btn:hover{ background:rgba(255,42,42,0.10); border-color:rgba(255,42,42,0.18); }
+
+    /* =========================
+       Modals
+       ========================= */
+    .modal-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.72);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 200ms ease;
+      display:grid;
+      place-items:center;
+      padding:18px;
+      z-index:50;
+    }
+    .modal-overlay.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    .modal{
+      width:min(520px, 100%);
+      border-radius:22px;
+      background:rgba(20,20,20,0.96);
+      box-shadow: 0 18px 60px rgba(0,0,0,0.6);
+      border:1px solid rgba(255,255,255,0.10);
+      overflow:hidden;
+    }
+
+    .modal-head{
+      padding:16px 16px 10px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .modal-title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+
+    .modal-title h2{
+      font-size:16px;
+      letter-spacing:0.6px;
+      font-weight:900;
+    }
+
+    .modal-sub{
+      font-size:13px;
+      opacity:0.75;
+      font-variant-numeric: tabular-nums;
+      letter-spacing:0.4px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 100%;
+    }
+
+    .modal-body{
+      padding:0 16px 16px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    label{
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:0.6px;
+      opacity:0.85;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    input, textarea, select{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);
+      color:var(--text);
+      padding:12px 12px;
+      outline:none;
+      font-size:14px;
+      touch-action: manipulation;
+    }
+
+    input:focus, textarea:focus, select:focus{
+      border-color: rgba(0,255,76,0.35);
+      box-shadow: 0 0 0 3px rgba(0,255,76,0.10);
+    }
+
+    textarea{
+      resize:none;
+      min-height:96px;
+      line-height:1.35;
+    }
+
+    .modal-actions{
+      display:flex;
+      gap:10px;
+      padding:14px 16px 16px;
+      border-top:1px solid rgba(255,255,255,0.10);
+      justify-content:flex-end;
+    }
+
+    .btn{
+      border:none;
+      border-radius:999px;
+      padding:12px 16px;
+      font-weight:900;
+      letter-spacing:0.6px;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 120ms ease, background 180ms ease, box-shadow 180ms ease;
+      touch-action: manipulation;
+    }
+    .btn:active{ transform:scale(0.98); }
+
+    .btn-ghost{
+      background:rgba(255,255,255,0.10);
+      color:rgba(255,255,255,0.86);
+    }
+    .btn-save{
+      background:rgba(0,255,76,0.92);
+      color:#001a08;
+      box-shadow: 0 0 18px rgba(0,255,76,0.18);
+    }
+    .btn-danger{
+      background:rgba(255,42,42,0.92);
+      color:#240000;
+      box-shadow: 0 0 18px rgba(255,42,42,0.18);
+    }
+
+    /* =========================
+       Menu overlay + drawer
+       ========================= */
+    .menu-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.65);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity 220ms ease;
+      z-index:30;
+    }
+    .menu-overlay.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    .menu-drawer{
+      position:fixed;
+      top:0;
+      left:0;
+      height:100vh;
+      width:var(--menuW);
+      max-width:520px;
+      background:rgba(16,16,16,0.96);
+      backdrop-filter: blur(14px);
+      border-right:1px solid rgba(255,255,255,0.10);
+      box-shadow: 18px 0 50px rgba(0,0,0,0.55);
+      transform: translateX(-102%);
+      transition: transform 260ms cubic-bezier(.2,.8,.2,1);
+      z-index:31;
+      display:flex;
+      flex-direction:column;
+      padding:16px;
+      gap:12px;
+    }
+    .menu-drawer.open{ transform: translateX(0); }
+
+    .menu-title{
+      font-weight:900;
+      letter-spacing:0.8px;
+      font-size:14px;
+      opacity:0.92;
+      padding:10px 10px 6px;
+    }
+
+    .menu-item{
+      width:100%;
+      border-radius:16px;
+      padding:14px 12px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      color:rgba(255,255,255,0.92);
+      font-weight:900;
+      letter-spacing:0.6px;
+      text-align:left;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 120ms ease, background 180ms ease, border-color 180ms ease;
+      touch-action: manipulation;
+    }
+    .menu-item:active{ transform:scale(0.99); }
+    .menu-item:hover{ background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.16); }
+
+    /* GOALS menu item: remove background frame */
+    .menu-item.menu-goals{
+      background:transparent;
+      border:none;
+      padding:10px 10px;
+      border-radius:10px;
+      opacity:0.92;
+    }
+    .menu-item.menu-goals:hover{
+      background:rgba(255,255,255,0.06);
+      border:none;
+    }
+
+    /* PREDICTION menu item: remove background frame */
+    .menu-item.menu-prediction{
+      background:transparent;
+      border:none;
+      padding:10px 10px;
+      border-radius:10px;
+      opacity:0.92;
+    }
+    .menu-item.menu-prediction:hover{
+      background:rgba(255,255,255,0.06);
+      border:none;
+    }
+
+    .menu-spacer{ flex:1; }
+
+    .settings-btn{
+      width:100%;
+      border:none;
+      height:52px;
+      border-radius:16px;
+      cursor:pointer;
+      font-weight:900;
+      letter-spacing:0.6px;
+      color:#001018;
+      background:rgba(0,191,255,0.92);
+      box-shadow: 0 0 18px rgba(0,191,255,0.18);
+      transition: transform 120ms ease, box-shadow 180ms ease, background 180ms ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .settings-btn:active{ transform:scale(0.99); }
+
+    /* =========================
+       Settings toggle
+       ========================= */
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      padding:10px 0 2px;
+    }
+    .row-left{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+    .row-title{
+      font-weight:900;
+      letter-spacing:0.6px;
+      font-size:12px;
+      opacity:0.9;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .row-sub{
+      font-size:12px;
+      opacity:0.65;
+      line-height:1.25;
+    }
+
+    .toggle{
+      width:54px;
+      height:30px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.08);
+      position:relative;
+      cursor:pointer;
+      flex:0 0 auto;
+      transition: background 180ms ease, border-color 180ms ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .toggle::after{
+      content:"";
+      position:absolute;
+      top:50%;
+      left:3px;
+      transform:translateY(-50%);
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      background:rgba(255,255,255,0.88);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+      transition: left 180ms ease, background 180ms ease;
+    }
+    .toggle.on{
+      background: rgba(0,191,255,0.28);
+      border-color: rgba(0,191,255,0.45);
+    }
+    .toggle.on::after{
+      left:27px;
+      background: rgba(0,191,255,0.95);
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .timer-wrap, .earnings-float, .action-btn, .overlay, .sheet,
+      .modal-overlay, .menu-overlay, .menu-drawer, .page,
+      .break-row, .break-timer { transition:none; }
+      .toggle::after{ transition:none; }
+      .goal-fill{ animation:none; }
+      .history-search-input{ transition:none; }
+    }
+  </style>
 </head>
 <body>
+  <!-- Menu icon -->
+  <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu">
+    <div class="menu-icon" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+  </button>
 
-    <header class="header">
-        <div id="menuBtn" class="menu-icon"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
-        <div class="rate-input-group">
-            <div class="rate-label">HOURLY RATE</div>
-            <div class="rate-box"><span id="rateCurrency" style="color:#444">$</span><input type="number" id="hourlyRate" value="50"></div>
-        </div>
-        <div class="stats-icon"><div class="stats-bars"><div class="s-bar" style="height:10px;"></div><div class="s-bar" style="height:18px;"></div><div class="s-bar" style="height:14px;"></div></div></div>
-    </header>
+  <!-- Stats icon -->
+  <button class="stats-btn" id="statsBtn" type="button" aria-label="Open stats">
+    <div class="stats-icon" aria-hidden="true">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    </div>
+  </button>
 
-    <div id="sideMenu" class="side-menu">
-        <div style="padding: 25px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-weight:bold; letter-spacing:2px">MENU</span>
-            <span id="closeMenu" style="color:var(--red); font-size:0.8rem; font-weight:bold; cursor:pointer">CLOSE</span>
+  <!-- Hourly Rate (top center) -->
+  <div class="top-rate" aria-label="Hourly rate">
+    <label for="rateInput">HOURLY RATE</label>
+    <input id="rateInput" class="rate-input" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" />
+  </div>
+
+  <div class="stage">
+    <div class="control" id="control">
+      <div class="earnings-float" id="earningsFloat">$0.00</div>
+
+      <div class="timer-wrap" id="timerWrap" aria-hidden="true">
+        <div class="timer" id="timer">00:00.00</div>
+      </div>
+
+      <!-- Timer/button layout stays exactly like before break.
+           Break row is absolute and doesn't shift this layout. -->
+      <div class="btn-stack" aria-label="Controls">
+        <button class="action-btn" id="actionBtn" type="button">START</button>
+
+        <div class="break-row" id="breakRow" aria-hidden="true">
+          <button class="break-btn" id="breakBtn" type="button">BREAK</button>
+          <div class="break-timer" id="breakTimer">00:00.00</div>
         </div>
-        <div class="menu-items">
-            <a href="#" class="menu-link">Goals</a>
-            <a href="#" class="menu-link">Predictions</a>
-            <a href="#" class="menu-link">Calendar</a>
-        </div>
-        <button id="openSettings" class="blue-settings-btn">SETTINGS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu overlay + drawer -->
+  <div class="menu-overlay" id="menuOverlay" aria-hidden="true"></div>
+  <aside class="menu-drawer" id="menuDrawer" aria-label="Menu">
+    <div class="menu-title">MENU</div>
+
+    <button class="menu-item menu-goals" id="goalsBtn" type="button">GOALS</button>
+    <button class="menu-item menu-prediction" id="predictionBtn" type="button">PREDICTION</button>
+    <button class="menu-item" id="calendarBtn" type="button">CALENDAR</button>
+
+    <div class="menu-spacer"></div>
+
+    <button class="settings-btn" id="settingsBtn" type="button">SETTINGS</button>
+  </aside>
+
+  <!-- History overlay -->
+  <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+  <!-- History bottom sheet -->
+  <section class="sheet" id="sheet" aria-label="History">
+    <div class="sheet-header" id="sheetHeader" role="button" aria-label="Toggle History">
+      <div class="handle"></div>
+      <div class="sheet-title">HISTORY</div>
     </div>
 
-    <div id="settingsPanel" class="modal-overlay">
-        <div class="modal-card">
-            <h3>Global Settings</h3>
-            <label style="font-size: 0.7rem; color: #888; display: block; margin-bottom: 5px;">CURRENCY SYMBOL</label>
-            <select id="currencySelector">
-                <option value="$">USD ($)</option><option value="€">EUR (€)</option><option value="£">GBP (£)</option><option value="R">ZAR (R)</option>
-            </select>
-            <button onclick="closeModal('settingsPanel')" class="btn-m" style="background:var(--accent); width:100%">DONE</button>
-        </div>
+    <div class="sheet-total-row">
+      <!-- NEW: Search icon + expanding input (left side) -->
+      <div class="sheet-tools-left">
+        <button class="search-btn" id="historySearchBtn" type="button" aria-label="Search history">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path fill="rgba(255,255,255,0.92)" d="M10 18a8 8 0 1 1 5.293-14.01A8 8 0 0 1 10 18Zm0-2a6 6 0 1 0-.001-12.001A6 6 0 0 0 10 16Zm9.707 5.707-4.11-4.11a1 1 0 0 1 1.414-1.414l4.11 4.11a1 1 0 0 1-1.414 1.414Z"/>
+          </svg>
+        </button>
+        <input class="history-search-input" id="historySearchInput" type="text" placeholder="Search tag, date, notes..." autocomplete="off" />
+      </div>
+
+      <!-- Total (right side) -->
+      <div class="sheet-total-right">
+        <div class="sheet-total-label">TOTAL</div>
+        <div class="sheet-total-value" id="historyTotal">$0.00</div>
+      </div>
     </div>
 
-    <div id="jobModal" class="modal-overlay">
-        <div class="modal-card">
-            <h3>New Job Session</h3>
-            <input type="text" id="jobInput" placeholder="Paystub Name (e.g. Project Alpha)">
-            <div class="modal-footer">
-                <button onclick="closeModal('jobModal')" class="btn-m" style="background:#222; color:#888">CANCEL</button>
-                <button id="confirmJob" class="btn-m" style="background:var(--accent)">CREATE</button>
+    <!-- NEW: Blue export button under the total bar -->
+    <div class="sheet-actions-row">
+      <button class="export-btn" id="exportBtn" type="button">EXPORT</button>
+    </div>
+
+    <div class="sheet-body" id="sheetBody">
+      <div class="hint" id="emptyHint">
+        Stopped timers will appear here. Swipe down on empty space to close, tap outside to close, or tap the HISTORY bar.
+        <br><br>
+        Tip: Long-press a saved tag to delete it.
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </section>
+
+  <!-- Stop popup/modal -->
+  <div class="modal-overlay" id="modalOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Save job">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2>Save Job</h2>
+          <div class="modal-sub" id="modalSub">Duration: 00:00.00</div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label for="tagInput">TAG (OPTIONAL)</label>
+          <input id="tagInput" type="text" placeholder='Leave empty to save as "No Tag"' maxlength="40" />
+        </div>
+
+        <div class="field">
+          <label for="notesInput">NOTES (OPTIONAL)</label>
+          <textarea id="notesInput" placeholder="Add notes (optional)"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="cancelBtn" type="button">CANCEL</button>
+        <button class="btn btn-save" id="saveBtn" type="button">SAVE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete confirmation modal (history) -->
+  <div class="modal-overlay" id="deleteOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Delete tag">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2>Delete Tag?</h2>
+          <div class="modal-sub" id="deleteSub">This will remove it from history.</div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label>SELECTED</label>
+          <div id="deleteDetails" style="padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);font-size:13px;line-height:1.35;">
+            —
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="deleteCancelBtn" type="button">CANCEL</button>
+        <button class="btn btn-danger" id="deleteConfirmBtn" type="button">DELETE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div class="modal-overlay" id="settingsOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Settings">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2>Settings</h2>
+          <div class="modal-sub">Currency + tag popup behavior</div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label for="currencySelect">CURRENCY</label>
+          <select id="currencySelect">
+            <option value="$">$ USD</option>
+            <option value="€">€ EUR</option>
+            <option value="£">£ GBP</option>
+            <option value="R">R ZAR</option>
+            <option value="¥">¥ JPY</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="row-left">
+            <div class="row-title">ADD TAG POPUP</div>
+            <div class="row-sub">Turn off to auto-save stops as “No Tag” with no popup.</div>
+          </div>
+          <div class="toggle" id="popupToggle" role="switch" aria-checked="true" tabindex="0"></div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-save" id="settingsCloseBtn" type="button">DONE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Set Goal modal -->
+  <div class="modal-overlay" id="goalOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Set goal">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2 id="goalTitle">Set Goal</h2>
+          <div class="modal-sub" id="goalSub">Enter your target amount</div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label for="goalAmountInput">GOAL AMOUNT</label>
+          <input id="goalAmountInput" type="text" inputmode="decimal" placeholder="$250.00" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="goalCancelBtn" type="button">CANCEL</button>
+        <button class="btn btn-save" id="goalSaveBtn" type="button">SAVE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar: Add Job modal -->
+  <div class="modal-overlay" id="jobOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Add job">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2>Add Work Job</h2>
+          <div class="modal-sub" id="jobSub">Schedule a job you need to do.</div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label for="jobTitleInput">JOB NAME</label>
+          <input id="jobTitleInput" type="text" placeholder="e.g. Field Spray - Block A" maxlength="60" />
+        </div>
+
+        <div class="field">
+          <label for="jobDateInput">DATE</label>
+          <input id="jobDateInput" type="date" />
+        </div>
+
+        <div class="field" style="display:flex;flex-direction:row;gap:10px;">
+          <div class="field" style="flex:1;">
+            <label for="jobStartInput">START TIME</label>
+            <input id="jobStartInput" type="time" />
+          </div>
+          <div class="field" style="flex:1;">
+            <label for="jobEndInput">END TIME</label>
+            <input id="jobEndInput" type="time" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="jobNotesInput">NOTES (OPTIONAL)</label>
+          <textarea id="jobNotesInput" placeholder="Add details (optional)"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="jobCancelBtn" type="button">CANCEL</button>
+        <button class="btn btn-save" id="jobSaveBtn" type="button">SAVE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar: Delete Job modal -->
+  <div class="modal-overlay" id="jobDeleteOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Delete job">
+      <div class="modal-head">
+        <div class="modal-title">
+          <h2>Delete Job?</h2>
+          <div class="modal-sub" id="jobDeleteSub">This will remove it from your calendar.</div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label>SELECTED</label>
+          <div id="jobDeleteDetails" style="padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);font-size:13px;line-height:1.35;">
+            —
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="jobDeleteCancelBtn" type="button">CANCEL</button>
+        <button class="btn btn-danger" id="jobDeleteConfirmBtn" type="button">DELETE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats page -->
+  <section class="page" id="statsPage" aria-label="Stats">
+    <div class="page-top">
+      <button class="back-btn" id="statsBack" type="button" aria-label="Back">←</button>
+      <div class="page-title">STATS</div>
+      <div style="width:44px;height:44px;"></div>
+    </div>
+
+    <div class="page-body">
+      <div class="stats-wrap">
+        <div class="stats-grid">
+          <div class="stats-card">
+            <div class="stats-card-head">
+              <div class="stats-card-title">Total Sessions</div>
+              <div class="stats-card-sub">All saved tags (including “No Tag”)</div>
             </div>
-        </div>
-    </div>
+            <div class="stats-big" id="statSessions">0</div>
+            <div class="stats-mini" id="statSessionsMini">No data yet</div>
+          </div>
 
-    <div id="saveModal" class="modal-overlay">
-        <div class="modal-card">
-            <h3>Session Log</h3>
-            <input type="text" id="sessionTag" placeholder="Tag Name">
-            <textarea id="sessionNote" placeholder="Notes (Optional)" rows="2"></textarea>
-            <div class="modal-footer">
-                <button id="cancelSave" class="btn-m" style="background:#222; color:#888">DISCARD</button>
-                <button id="confirmSave" class="btn-m" style="background:var(--accent)">SAVE</button>
+          <div class="stats-card">
+            <div class="stats-card-head">
+              <div class="stats-card-title">Total Earned</div>
+              <div class="stats-card-sub">Sum of amounts saved in history</div>
             </div>
+            <div class="stats-big" id="statTotalEarned">$0.00</div>
+            <div class="stats-mini" id="statTotalEarnedMini">—</div>
+          </div>
+
+          <div class="stats-card">
+            <div class="stats-card-head">
+              <div class="stats-card-title">Most Used Tag</div>
+              <div class="stats-card-sub">Highest session count</div>
+            </div>
+            <div class="stats-big" id="statMostTag">—</div>
+            <div class="stats-mini" id="statMostTagMini">—</div>
+          </div>
+
+          <div class="stats-card">
+            <div class="stats-card-head">
+              <div class="stats-card-title">Least Used Tag</div>
+              <div class="stats-card-sub">Lowest session count</div>
+            </div>
+            <div class="stats-big" id="statLeastTag">—</div>
+            <div class="stats-mini" id="statLeastTagMini">—</div>
+          </div>
+
+          <div class="stats-card full" id="statsPieCard">
+            <div class="stats-card-head">
+              <div class="stats-card-title">Tag Usage</div>
+              <div class="stats-card-sub">Pie chart shows how often each tag was used (by session count).</div>
+            </div>
+
+            <div class="pie-row">
+              <div class="pie-wrap">
+                <canvas id="tagPie"></canvas>
+                <div class="pie-center">
+                  <div>
+                    <div class="center-num" id="pieCenterNum">0</div>
+                    <div class="center-sub">SESSIONS</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="legend" id="tagLegend"></div>
+            </div>
+          </div>
+
+          <div class="stats-card full" id="statsTableCard">
+            <div class="stats-card-head">
+              <div class="stats-card-title">Tag Totals</div>
+              <div class="stats-card-sub">Rounded up per tag: session count + total amount earned (includes “No Tag”).</div>
+            </div>
+            <div class="tag-table" id="tagTable"></div>
+          </div>
+
+          <div class="empty-stats" id="statsEmpty" style="display:none;">
+            No saved tags yet. Stop a timer to create history, then come back here.
+          </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Predictions page -->
+  <section class="page" id="predictionPage" aria-label="Prediction">
+    <div class="page-top">
+      <button class="back-btn" id="predictionBack" type="button" aria-label="Back">←</button>
+      <div class="page-title">PREDICTION</div>
+      <div style="width:44px;height:44px;"></div>
     </div>
 
-    <main class="main-stage">
-        <div id="earnings" class="earnings-glow">$0.00</div>
-        <div id="timer" class="timer-text">00:00:00:00</div>
-        <div id="breakTimerDisplay">00:00:00:00</div>
-        <div class="controls-row">
-            <button id="breakBtn" class="btn-break action">BREAK</button>
-            <button id="actionBtn" class="btn-start-stop action">START</button>
-        </div>
-    </main>
+    <div class="page-body">
+      <div class="stats-wrap">
+        <div class="stats-grid">
+          <div class="stats-card full">
+            <div class="stats-card-head">
+              <div class="stats-card-title">Model</div>
+              <div class="stats-card-sub">
+                Projections are based on your saved history pace. Forecasts are capped to <span id="predCapDate">Dec 31</span>.
+              </div>
+            </div>
+            <div class="two-col" id="predChips"></div>
+          </div>
 
-    <div id="dashboard" class="dashboard-panel">
-        <div class="dashboard-handle"><span class="handle-label">Dashboard</span><div id="addJobBtn" class="plus-icon">+</div></div>
-        <div class="job-nav-box"><div class="job-select-wrapper"><select id="jobSelector"></select><div class="dropdown-arrow"></div></div></div>
-        <div id="historyList" class="dashboard-content"></div>
+          <div class="stats-card full">
+            <div class="stats-card-head">
+              <div class="stats-card-title">Potential Earnings</div>
+              <div class="stats-card-sub" id="predSubtitle">—</div>
+            </div>
+            <div class="pred-list" id="predList"></div>
+          </div>
+
+          <div class="stats-card full" id="predEmpty" style="display:none;">
+            <div class="stats-card-head">
+              <div class="stats-card-title">No Data</div>
+              <div class="stats-card-sub">Stop a timer at least once to generate a forecast.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Calendar page -->
+  <section class="page" id="calendarPage" aria-label="Calendar">
+    <div class="page-top">
+      <button class="back-btn" id="calendarBack" type="button" aria-label="Back">←</button>
+      <div class="page-title">CALENDAR</div>
+      <div style="width:44px;height:44px;"></div>
     </div>
 
-    <script>
-        const actionBtn = document.getElementById('actionBtn'), breakBtn = document.getElementById('breakBtn'),
-              timerDisplay = document.getElementById('timer'), earningsDisplay = document.getElementById('earnings'),
-              breakTimerDisplay = document.getElementById('breakTimerDisplay'), historyList = document.getElementById('historyList'),
-              jobSelector = document.getElementById('jobSelector'), rateInput = document.getElementById('hourlyRate'),
-              currencySelector = document.getElementById('currencySelector'), rateCurrency = document.getElementById('rateCurrency');
+    <div class="page-body">
+      <div class="cal-wrap">
+        <div class="cal-topbar">
+          <div class="cal-month" id="calMonthLabel">—</div>
+          <div class="cal-nav">
+            <button class="icon-btn" id="calPrev" type="button" aria-label="Previous month">‹</button>
+            <button class="icon-btn" id="calToday" type="button" aria-label="Go to today">•</button>
+            <button class="icon-btn" id="calNext" type="button" aria-label="Next month">›</button>
+          </div>
+        </div>
 
-        let startTime, timerInterval, isRunning = false, isPaused = false,
-            pausedTime = 0, currentBreakSession = 0, totalPausedAccumulated = 0, breakStartTime,
-            sessionStartClock, sessionEndClock, currentCurrency = "$";
+        <div class="cal-grid">
+          <div class="cal-dow">
+            <div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div><div>SUN</div>
+          </div>
+          <div class="cal-days" id="calDays"></div>
+        </div>
 
-        let sessionLogs = JSON.parse(localStorage.getItem('pro_tracker_v23')) || { "Default Session": [] };
+        <div class="cal-section">
+          <div class="cal-section-head">
+            <div class="cal-section-title">
+              <div class="cal-title" id="calSelectedTitle">Scheduled Jobs</div>
+              <div class="cal-sub" id="calSelectedSub">—</div>
+            </div>
+            <button class="add-btn" id="calAddBtn" type="button">+ ADD</button>
+          </div>
 
-        function init() {
-            updateJobDropdown();
-            renderHistory();
-            rateInput.value = localStorage.getItem('rate') || 50;
-            currentCurrency = localStorage.getItem('currency') || "$";
-            currencySelector.value = currentCurrency;
-            rateCurrency.textContent = currentCurrency;
+          <div class="cal-list" id="calList"></div>
+          <div class="hint" id="calEmptyHint" style="padding:8px 6px;margin:0;">
+            No jobs on this date. Tap <b>ADD</b> to schedule a work job.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Goals page -->
+  <section class="page" id="goalsPage" aria-label="Goals">
+    <div class="page-top">
+      <button class="back-btn" id="goalsBack" type="button" aria-label="Back">←</button>
+      <div class="page-title">GOALS</div>
+      <div style="width:44px;height:44px;"></div>
+    </div>
+
+    <div class="page-body">
+      <div class="goals-wrap" id="goalsWrap"></div>
+    </div>
+  </section>
+
+  <script>
+    // ==========================
+    // Haptics (Android-friendly)
+    // ==========================
+    function haptic(pattern = 12){
+      try{
+        if (navigator && typeof navigator.vibrate === "function"){
+          navigator.vibrate(pattern);
+        }
+      } catch {}
+    }
+
+    // ==========================
+    // Storage
+    // ==========================
+    const LS_KEY = "timer_history_v3";
+    const RATE_KEY = "hourly_rate_v1";
+    const CURR_KEY = "currency_symbol_v1";
+    const POPUP_KEY = "tag_popup_enabled_v1";
+    const GOALS_KEY = "goals_targets_v4";
+    const CAL_KEY = "calendar_jobs_v1";
+
+    function loadHistory(){
+      try{
+        const raw = localStorage.getItem(LS_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch { return []; }
+    }
+    function saveHistory(){
+      try{ localStorage.setItem(LS_KEY, JSON.stringify(history)); } catch {}
+    }
+
+    function loadRate(){
+      try{
+        const raw = localStorage.getItem(RATE_KEY);
+        const n = raw === null ? NaN : Number(raw);
+        return Number.isFinite(n) ? n : 0;
+      } catch { return 0; }
+    }
+    function saveRate(val){
+      try{ localStorage.setItem(RATE_KEY, String(val)); } catch {}
+    }
+
+    function loadCurrency(){
+      try{
+        const raw = localStorage.getItem(CURR_KEY);
+        return (typeof raw === "string" && raw.length) ? raw : "$";
+      } catch { return "$"; }
+    }
+    function saveCurrency(sym){
+      try{ localStorage.setItem(CURR_KEY, String(sym)); } catch {}
+    }
+
+    function loadPopupEnabled(){
+      try{
+        const raw = localStorage.getItem(POPUP_KEY);
+        if (raw === null) return true;
+        return raw === "true";
+      } catch { return true; }
+    }
+    function savePopupEnabled(v){
+      try{ localStorage.setItem(POPUP_KEY, v ? "true" : "false"); } catch {}
+    }
+
+    function loadGoals(){
+      const defaults = { daily: 0, weekly: 0, biweekly: 0, monthly: 0, yearly: 0 };
+      try{
+        const raw = localStorage.getItem(GOALS_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed || typeof parsed !== "object") return defaults;
+        return {
+          daily:   Number.isFinite(Number(parsed.daily))   ? Number(parsed.daily)   : defaults.daily,
+          weekly:  Number.isFinite(Number(parsed.weekly))  ? Number(parsed.weekly)  : defaults.weekly,
+          biweekly:Number.isFinite(Number(parsed.biweekly))? Number(parsed.biweekly): defaults.biweekly,
+          monthly: Number.isFinite(Number(parsed.monthly)) ? Number(parsed.monthly) : defaults.monthly,
+          yearly:  Number.isFinite(Number(parsed.yearly))  ? Number(parsed.yearly)  : defaults.yearly
+        };
+      } catch {
+        return defaults;
+      }
+    }
+    function saveGoals(obj){
+      try{ localStorage.setItem(GOALS_KEY, JSON.stringify(obj)); } catch {}
+    }
+
+    function loadCalendar(){
+      try{
+        const raw = localStorage.getItem(CAL_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch { return []; }
+    }
+    function saveCalendar(){
+      try{ localStorage.setItem(CAL_KEY, JSON.stringify(calendarJobs)); } catch {}
+    }
+
+    // ==========================
+    // Global settings state
+    // ==========================
+    let currencySymbol = loadCurrency();
+    let tagPopupEnabled = loadPopupEnabled();
+    let goalsTargets = loadGoals();
+
+    let calendarJobs = loadCalendar();
+    let calMonth = new Date();
+    calMonth.setDate(1); calMonth.setHours(0,0,0,0);
+
+    // ==========================
+    // Money helpers
+    // ==========================
+    function formatMoney(n){
+      return `${currencySymbol}${n.toFixed(2)}`;
+    }
+    function calcEarnings(ms, rate){
+      const hours = ms / 3600000;
+      return hours * rate;
+    }
+
+    function parseMoneyInput(raw){
+      const s = String(raw ?? "").trim();
+      if (!s) return 0;
+      const cleaned = s.replace(/[^\d.]/g, "");
+      if (!cleaned) return 0;
+      const parts = cleaned.split(".");
+      const normalized = parts.length <= 2 ? cleaned : (parts[0] + "." + parts.slice(1).join(""));
+      const n = Number(normalized);
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    }
+
+    function moneyToInput(n){
+      const v = Number(n);
+      if (!Number.isFinite(v)) return "";
+      return (Math.round(v * 100) / 100).toFixed(2);
+    }
+
+    function safeTagName(tag){
+      const t = (tag ?? "").toString().trim();
+      return t ? t : "No Tag";
+    }
+
+    // Deterministic color per tag
+    function hashStr(s){
+      let h = 2166136261;
+      for (let i=0;i<s.length;i++){
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0);
+    }
+    function tagColor(tag){
+      const h = hashStr(tag) % 360;
+      return `hsl(${h} 82% 58%)`;
+    }
+
+    // ==========================
+    // Menu drawer behavior
+    // ==========================
+    const menuBtn = document.getElementById("menuBtn");
+    const menuOverlay = document.getElementById("menuOverlay");
+    const menuDrawer = document.getElementById("menuDrawer");
+    const settingsBtn = document.getElementById("settingsBtn");
+    const goalsBtn = document.getElementById("goalsBtn");
+    const predictionBtn = document.getElementById("predictionBtn");
+    const calendarBtn = document.getElementById("calendarBtn");
+
+    function openMenu(){
+      haptic(10);
+      menuDrawer.classList.add("open");
+      menuOverlay.classList.add("show");
+      menuOverlay.setAttribute("aria-hidden", "false");
+    }
+    function closeMenu(){
+      menuDrawer.classList.remove("open");
+      menuOverlay.classList.remove("show");
+      menuOverlay.setAttribute("aria-hidden", "true");
+    }
+    function toggleMenu(){
+      if (menuDrawer.classList.contains("open")) { haptic(8); closeMenu(); }
+      else openMenu();
+    }
+    menuBtn.addEventListener("click", toggleMenu);
+    menuOverlay.addEventListener("click", () => { haptic(8); closeMenu(); });
+
+    // ==========================
+    // Pages
+    // ==========================
+    const statsBtn = document.getElementById("statsBtn");
+    const statsPage = document.getElementById("statsPage");
+    const statsBack = document.getElementById("statsBack");
+
+    const goalsPage = document.getElementById("goalsPage");
+    const goalsBack = document.getElementById("goalsBack");
+
+    const predictionPage = document.getElementById("predictionPage");
+    const predictionBack = document.getElementById("predictionBack");
+
+    const calendarPage = document.getElementById("calendarPage");
+    const calendarBack = document.getElementById("calendarBack");
+
+    function openPage(pageEl){
+      haptic(10);
+      closeMenu();
+      closeSettings();
+      closeSheet();
+      pageEl.classList.add("show");
+
+      if (pageEl === goalsPage) renderGoalsUI();
+      if (pageEl === statsPage) renderStats();
+      if (pageEl === predictionPage) renderPrediction();
+      if (pageEl === calendarPage) renderCalendar();
+    }
+    function closePage(pageEl){
+      haptic(8);
+      pageEl.classList.remove("show");
+    }
+
+    statsBtn.addEventListener("click", () => openPage(statsPage));
+    statsBack.addEventListener("click", () => closePage(statsPage));
+
+    goalsBtn.addEventListener("click", () => openPage(goalsPage));
+    goalsBack.addEventListener("click", () => closePage(goalsPage));
+
+    predictionBtn.addEventListener("click", () => openPage(predictionPage));
+    predictionBack.addEventListener("click", () => closePage(predictionPage));
+
+    calendarBtn.addEventListener("click", () => openPage(calendarPage));
+    calendarBack.addEventListener("click", () => closePage(calendarPage));
+
+    // ==========================
+    // Settings modal behavior
+    // ==========================
+    const settingsOverlay = document.getElementById("settingsOverlay");
+    const settingsCloseBtn = document.getElementById("settingsCloseBtn");
+    const currencySelect = document.getElementById("currencySelect");
+    const popupToggle = document.getElementById("popupToggle");
+
+    function applyToggleUI(){
+      popupToggle.classList.toggle("on", tagPopupEnabled);
+      popupToggle.setAttribute("aria-checked", tagPopupEnabled ? "true" : "false");
+    }
+
+    function openSettings(){
+      haptic(10);
+      closeMenu();
+      currencySelect.value = currencySymbol;
+      applyToggleUI();
+
+      settingsOverlay.classList.add("show");
+      settingsOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function closeSettings(){
+      settingsOverlay.classList.remove("show");
+      settingsOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    settingsBtn.addEventListener("click", openSettings);
+    settingsCloseBtn.addEventListener("click", () => { haptic(8); closeSettings(); });
+
+    settingsOverlay.addEventListener("click", (e) => {
+      if (e.target === settingsOverlay) { haptic(8); closeSettings(); }
+    });
+
+    currencySelect.addEventListener("change", () => {
+      haptic(10);
+      currencySymbol = currencySelect.value || "$";
+      saveCurrency(currencySymbol);
+
+      renderHistory();
+      updateGoalsProgressLive();
+      refreshGoalsPills();
+      renderStats();
+      renderPrediction();
+
+      if (running) {
+        earningsFloat.textContent = formatMoney(calcEarnings(getWorkElapsedNowMs(), hourlyRate));
+      } else {
+        earningsFloat.textContent = formatMoney(0);
+      }
+    });
+
+    function togglePopupSetting(){
+      haptic(10);
+      tagPopupEnabled = !tagPopupEnabled;
+      savePopupEnabled(tagPopupEnabled);
+      applyToggleUI();
+    }
+    popupToggle.addEventListener("click", togglePopupSetting);
+    popupToggle.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        togglePopupSetting();
+      }
+    });
+
+    // ==========================
+    // Hourly rate + earnings
+    // ==========================
+    const rateInput = document.getElementById("rateInput");
+    const earningsFloat = document.getElementById("earningsFloat");
+    const historyTotalEl = document.getElementById("historyTotal");
+
+    let hourlyRate = loadRate();
+    rateInput.value = hourlyRate ? String(hourlyRate) : "";
+
+    function getRate(){
+      const v = Number(rateInput.value);
+      return Number.isFinite(v) && v > 0 ? v : 0;
+    }
+
+    rateInput.addEventListener("input", () => {
+      hourlyRate = getRate();
+      saveRate(hourlyRate);
+      updateGoalsProgressLive();
+    });
+
+    // ==========================
+    // History: search + export (NEW)
+    // ==========================
+    const historySearchBtn = document.getElementById("historySearchBtn");
+    const historySearchInput = document.getElementById("historySearchInput");
+    const exportBtn = document.getElementById("exportBtn");
+
+    let historySearchQuery = "";
+
+    function normalizeSearch(s){
+      return String(s || "").toLowerCase().trim();
+    }
+
+    function setSearchOpen(open){
+      sheet.classList.toggle("search-open", !!open);
+      if (open){
+        setTimeout(() => {
+          try{ historySearchInput.focus(); } catch {}
+        }, 0);
+      } else {
+        historySearchInput.value = "";
+        historySearchQuery = "";
+        renderHistory();
+      }
+    }
+
+    historySearchBtn.addEventListener("click", () => {
+      haptic(10);
+      const open = !sheet.classList.contains("search-open");
+      setSearchOpen(open);
+    });
+
+    historySearchInput.addEventListener("input", () => {
+      historySearchQuery = normalizeSearch(historySearchInput.value);
+      renderHistory();
+    });
+
+    historySearchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape"){
+        e.preventDefault();
+        haptic(8);
+        setSearchOpen(false);
+      }
+    });
+
+    exportBtn.addEventListener("click", () => {
+      // does nothing for now (placeholder)
+      haptic(10);
+    });
+
+    // ==========================
+    // Timer logic (work timer + break timer)
+    // ==========================
+    const control = document.getElementById("control");
+    const btn = document.getElementById("actionBtn");
+    const breakBtn = document.getElementById("breakBtn");
+    const timerEl = document.getElementById("timer");
+    const breakTimerEl = document.getElementById("breakTimer");
+
+    let running = false;
+    let onBreak = false;
+
+    // Work timing: accumulated + current running segment
+    let workAccumMs = 0;
+    let workResumePerf = 0;
+
+    // Wall times
+    let startAtWall = null;
+
+    // Break timing
+    let breakStartPerf = 0;
+    let breakStartWall = null;
+    let breakRafId = null;
+
+    // RAF
+    let rafId = null;
+
+    // Break list for current session
+    let currentBreaks = [];
+
+    // pending stop data
+    let pendingDisplay = "00:00.00";
+    let pendingClockIn = "";
+    let pendingClockOut = "";
+    let pendingDate = "";
+    let pendingWhenISO = "";
+    let pendingAmount = 0;
+    let pendingBreaks = [];
+
+    let history = loadHistory();
+
+    function formatTime(ms){
+      const totalCentis = Math.floor(ms / 10);
+      const centis = totalCentis % 100;
+      const totalSeconds = Math.floor(totalCentis / 100);
+      const seconds = totalSeconds % 60;
+      const minutes = Math.floor(totalSeconds / 60);
+
+      const mm = String(minutes).padStart(2, "0");
+      const ss = String(seconds).padStart(2, "0");
+      const cc = String(centis).padStart(2, "0");
+      return `${mm}:${ss}.${cc}`;
+    }
+
+    function formatClock(d){
+      return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function formatDateOnly(d){
+      return d.toLocaleDateString(undefined, { day:"2-digit", month:"short", year:"numeric" });
+    }
+
+    function getWorkElapsedNowMs(){
+      if (!running) return 0;
+      const now = performance.now();
+      let ms = workAccumMs;
+      if (!onBreak) ms += Math.max(0, now - workResumePerf);
+      return ms;
+    }
+
+    function getLiveSessionAmount(){
+      if (!running) return 0;
+      return calcEarnings(getWorkElapsedNowMs(), hourlyRate);
+    }
+
+    function tickWork(now){
+      const elapsedWork = Math.max(0, workAccumMs + (now - workResumePerf));
+      const liveAmt = calcEarnings(elapsedWork, hourlyRate);
+
+      timerEl.textContent = formatTime(elapsedWork);
+      earningsFloat.textContent = formatMoney(liveAmt);
+
+      updateGoalsProgressLive();
+      rafId = requestAnimationFrame(tickWork);
+    }
+
+    function tickBreak(now){
+      const elapsedBreak = Math.max(0, now - breakStartPerf);
+      breakTimerEl.textContent = formatTime(elapsedBreak);
+
+      // goals update still runs, but live work amount is frozen (workElapsed ignores break)
+      updateGoalsProgressLive();
+      breakRafId = requestAnimationFrame(tickBreak);
+    }
+
+    function start(){
+      haptic(12);
+      hourlyRate = getRate();
+      saveRate(hourlyRate);
+
+      running = true;
+      onBreak = false;
+      control.classList.add("running");
+      control.classList.remove("onbreak");
+
+      btn.textContent = "STOP";
+      btn.setAttribute("aria-pressed", "true");
+
+      breakBtn.textContent = "BREAK";
+
+      workAccumMs = 0;
+      workResumePerf = performance.now();
+      startAtWall = new Date();
+
+      currentBreaks = [];
+      breakTimerEl.textContent = "00:00.00";
+
+      timerEl.textContent = "00:00.00";
+      earningsFloat.textContent = formatMoney(0);
+
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(tickWork);
+    }
+
+    function finalizeBreakRecord(endWall, endPerf){
+      if (!breakStartWall) return;
+
+      const durMs = Math.max(0, endPerf - breakStartPerf);
+      const startISO = breakStartWall.toISOString();
+      const endISO = endWall.toISOString();
+
+      currentBreaks.push({
+        startISO,
+        endISO,
+        startLabel: formatClock(breakStartWall),
+        endLabel: formatClock(endWall),
+        durationMs: durMs,
+        duration: formatTime(durMs)
+      });
+
+      breakStartWall = null;
+      breakStartPerf = 0;
+    }
+
+    function enterBreak(){
+      if (!running || onBreak) return;
+
+      haptic([12, 40, 12]);
+
+      // lock in work accumulated so far, then pause work tick
+      const nowPerf = performance.now();
+      workAccumMs += Math.max(0, nowPerf - workResumePerf);
+
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+
+      // start break
+      onBreak = true;
+      control.classList.add("onbreak");
+
+      breakBtn.textContent = "STOP BREAK";
+
+      breakStartPerf = nowPerf;
+      breakStartWall = new Date();
+      breakTimerEl.textContent = "00:00.00";
+
+      if (breakRafId) cancelAnimationFrame(breakRafId);
+      breakRafId = requestAnimationFrame(tickBreak);
+    }
+
+    function exitBreak(resumeWork = true){
+      if (!running || !onBreak) return;
+
+      haptic(14);
+
+      const endPerf = performance.now();
+      const endWall = new Date();
+
+      if (breakRafId) cancelAnimationFrame(breakRafId);
+      breakRafId = null;
+
+      finalizeBreakRecord(endWall, endPerf);
+
+      onBreak = false;
+      control.classList.remove("onbreak");
+      breakBtn.textContent = "BREAK";
+      breakTimerEl.textContent = "00:00.00";
+
+      if (resumeWork){
+        workResumePerf = endPerf;
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(tickWork);
+      }
+
+      updateGoalsProgressLive();
+    }
+
+    // Break button: toggles break mode
+    breakBtn.addEventListener("click", () => {
+      if (!running) return;
+
+      if (!onBreak) enterBreak();
+      else exitBreak(true);
+    });
+
+    function hardStopTimerCapture(){
+      haptic(18);
+
+      const stopWall = new Date();
+      const stopPerf = performance.now();
+
+      // If user stops while on break, close the break interval at stop time (but do not resume work)
+      if (onBreak){
+        if (breakRafId) cancelAnimationFrame(breakRafId);
+        breakRafId = null;
+        finalizeBreakRecord(stopWall, stopPerf);
+        onBreak = false;
+        control.classList.remove("onbreak");
+        breakBtn.textContent = "BREAK";
+        breakTimerEl.textContent = "00:00.00";
+      } else {
+        workAccumMs += Math.max(0, stopPerf - workResumePerf);
+      }
+
+      const elapsedWork = Math.max(0, workAccumMs);
+
+      pendingDisplay = formatTime(elapsedWork);
+      pendingClockIn = startAtWall ? formatClock(startAtWall) : "";
+      pendingClockOut = formatClock(stopWall);
+      pendingDate = startAtWall ? formatDateOnly(startAtWall) : formatDateOnly(stopWall);
+      pendingWhenISO = stopWall.toISOString();
+      pendingAmount = calcEarnings(elapsedWork, hourlyRate);
+
+      pendingBreaks = Array.isArray(currentBreaks) ? currentBreaks.slice() : [];
+
+      running = false;
+      control.classList.remove("running");
+
+      btn.textContent = "START";
+      btn.setAttribute("aria-pressed", "false");
+
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+
+      updateGoalsProgressLive();
+    }
+
+    function commitStopToHistory(tag, notes){
+      const safeTag = safeTagName(tag);
+      const safeNotes = (notes && String(notes).trim()) ? String(notes) : "";
+
+      history.unshift({
+        duration: pendingDisplay,
+        clockIn: pendingClockIn,
+        clockOut: pendingClockOut,
+        date: pendingDate,
+        whenISO: pendingWhenISO,
+        tag: safeTag,
+        notes: safeNotes,
+        amount: pendingAmount,
+        breaks: pendingBreaks || []
+      });
+
+      saveHistory();
+      renderHistory();
+      renderStats();
+      renderPrediction();
+      updateGoalsProgressLive();
+
+      resetAfterStop();
+    }
+
+    btn.addEventListener("click", () => {
+      if (!running) start();
+      else {
+        hardStopTimerCapture();
+
+        if (!tagPopupEnabled) {
+          commitStopToHistory("No Tag", "");
+          return;
+        }
+        openSaveModal();
+      }
+    });
+
+    // ==========================
+    // History total + render (UPDATED for search)
+    // ==========================
+    function computeHistoryTotal(list){
+      const arr = Array.isArray(list) ? list : history;
+      let sum = 0;
+      for (const item of arr){
+        const amt = Number(item.amount);
+        if (Number.isFinite(amt)) sum += amt;
+      }
+      return sum;
+    }
+
+    function renderHistoryTotal(list){
+      historyTotalEl.textContent = formatMoney(computeHistoryTotal(list));
+    }
+
+    const historyList = document.getElementById("historyList");
+    const emptyHint = document.getElementById("emptyHint");
+
+    function getFilteredHistory(){
+      const q = normalizeSearch(historySearchQuery);
+      if (!q) return history.map((item, index) => ({ item, index }));
+
+      const res = [];
+      for (let i = 0; i < history.length; i++){
+        const it = history[i];
+
+        const tag = safeTagName(it.tag);
+        const notes = (it.notes || "");
+        const date = (it.date || "");
+        const ci = (it.clockIn || "");
+        const co = (it.clockOut || "");
+        const dur = (it.duration || "");
+        const breaks = Array.isArray(it.breaks) ? it.breaks.map(b => `${b.startLabel || ""} ${b.endLabel || ""} ${b.duration || ""}`).join(" ") : "";
+
+        const hay = `${tag} ${notes} ${date} ${ci} ${co} ${dur} ${breaks}`.toLowerCase();
+        if (hay.includes(q)) res.push({ item: it, index: i });
+      }
+      return res;
+    }
+
+    function renderHistory(){
+      historyList.innerHTML = "";
+
+      const filtered = getFilteredHistory();
+      const showingSearch = !!normalizeSearch(historySearchQuery);
+
+      if (!history.length){
+        emptyHint.style.display = "block";
+        emptyHint.innerHTML =
+          `Stopped timers will appear here. Swipe down on empty space to close, tap outside to close, or tap the HISTORY bar.
+          <br><br>
+          Tip: Long-press a saved tag to delete it.`;
+        renderHistoryTotal(history);
+        return;
+      }
+
+      if (!filtered.length){
+        emptyHint.style.display = "block";
+        emptyHint.innerHTML =
+          showingSearch
+            ? `No results for <b>${historySearchQuery.replaceAll("<","&lt;").replaceAll(">","&gt;")}</b>.`
+            : `Stopped timers will appear here. Swipe down on empty space to close, tap outside to close, or tap the HISTORY bar.
+              <br><br>
+              Tip: Long-press a saved tag to delete it.`;
+        renderHistoryTotal(showingSearch ? [] : history);
+        return;
+      }
+
+      emptyHint.style.display = "none";
+
+      for (let k = 0; k < filtered.length; k++){
+        const { item, index } = filtered[k];
+
+        const row = document.createElement("div");
+        row.className = "history-item";
+
+        const left = document.createElement("div");
+        left.className = "history-left";
+
+        const tagHeader = document.createElement("div");
+        tagHeader.className = "tag-header";
+        tagHeader.textContent = safeTagName(item.tag);
+
+        const durationLine = document.createElement("div");
+        durationLine.className = "duration-line";
+        durationLine.textContent = item.duration || "00:00.00";
+
+        left.appendChild(tagHeader);
+        left.appendChild(durationLine);
+
+        if (Array.isArray(item.breaks) && item.breaks.length){
+          for (const b of item.breaks){
+            const bl = document.createElement("div");
+            bl.className = "break-line";
+            const s = (b && b.startLabel) ? b.startLabel : "";
+            const e = (b && b.endLabel) ? b.endLabel : "";
+            const dur = (b && b.duration) ? b.duration : "";
+            const timeRange = (s && e) ? `${s} - ${e}` : "";
+            const durPart = dur ? ` • ${dur}` : "";
+            bl.textContent = timeRange ? `Break: ${timeRange}${durPart}` : `Break${durPart}`;
+            left.appendChild(bl);
+          }
         }
 
-        function saveData() { localStorage.setItem('pro_tracker_v23', JSON.stringify(sessionLogs)); }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        const clockLine = document.createElement("div");
+        clockLine.className = "clock-line";
+        const ci = item.clockIn || "";
+        const co = item.clockOut || "";
+        clockLine.textContent = (ci && co) ? `${ci} - ${co}` : "";
 
-        // Job logic
-        document.getElementById('addJobBtn').onclick = (e) => { e.stopPropagation(); document.getElementById('jobModal').style.display = 'flex'; };
-        document.getElementById('confirmJob').onclick = () => {
-            const name = document.getElementById('jobInput').value.trim() || "New Job";
-            if(!sessionLogs[name]) { sessionLogs[name] = []; updateJobDropdown(); jobSelector.value = name; saveData(); renderHistory(); }
-            closeModal('jobModal');
-        };
-        function updateJobDropdown() { jobSelector.innerHTML = ""; Object.keys(sessionLogs).forEach(k => { const opt = document.createElement('option'); opt.value = k; opt.textContent = k.toUpperCase(); jobSelector.appendChild(opt); }); }
-        jobSelector.onchange = renderHistory;
+        const dateLine = document.createElement("div");
+        dateLine.className = "date-line";
+        dateLine.textContent = item.date || "";
 
-        // UI Toggles
-        document.getElementById('menuBtn').onclick = () => document.getElementById('sideMenu').classList.add('open');
-        document.getElementById('closeMenu').onclick = () => document.getElementById('sideMenu').classList.remove('open');
-        document.getElementById('openSettings').onclick = () => document.getElementById('settingsPanel').style.display = 'flex';
-        currencySelector.onchange = (e) => { currentCurrency = e.target.value; rateCurrency.textContent = currentCurrency; localStorage.setItem('currency', currentCurrency); updateUI(); };
-        rateInput.oninput = () => localStorage.setItem('rate', rateInput.value);
+        const notesLine = document.createElement("div");
+        notesLine.className = "notes-line";
+        notesLine.textContent = (item.notes || "").trim();
 
-        // Timer Logic
-        actionBtn.onclick = () => {
-            if (!isRunning) {
-                isRunning = true; startTime = Date.now(); totalPausedAccumulated = 0; currentBreakSession = 0;
-                sessionStartClock = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                actionBtn.textContent = 'STOP'; actionBtn.classList.add('active'); breakBtn.classList.add('active');
-                timerInterval = setInterval(updateUI, 10);
-            } else {
-                isRunning = false; clearInterval(timerInterval);
-                sessionEndClock = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                document.getElementById('saveModal').style.display = 'flex';
-            }
-        };
+        if (clockLine.textContent) left.appendChild(clockLine);
+        if (dateLine.textContent) left.appendChild(dateLine);
+        if (notesLine.textContent) left.appendChild(notesLine);
 
-        breakBtn.onclick = () => {
-            if (!isPaused) {
-                isPaused = true; breakStartTime = Date.now();
-                breakBtn.textContent = 'STOP BREAK'; breakBtn.classList.add('stop-break');
-                breakTimerDisplay.classList.add('visible');
-            } else {
-                isPaused = false;
-                currentBreakSession += (Date.now() - breakStartTime);
-                totalPausedAccumulated = currentBreakSession;
-                breakBtn.textContent = 'BREAK'; breakBtn.classList.remove('stop-break');
-                // Persist the display: we don't remove .visible here
-            }
-        };
+        const amountEl = document.createElement("div");
+        amountEl.className = "history-amount";
+        const amt = Number(item.amount);
+        amountEl.textContent = Number.isFinite(amt) ? formatMoney(amt) : formatMoney(0);
 
-        document.getElementById('confirmSave').onclick = () => {
-            const log = {
-                tag: document.getElementById('sessionTag').value || "NO TAG",
-                note: document.getElementById('sessionNote').value,
-                start: sessionStartClock, end: sessionEndClock,
-                date: new Date().toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}),
-                earnings: earningsDisplay.textContent, duration: timerDisplay.textContent,
-                breakVal: totalPausedAccumulated > 0 ? formatTime(totalPausedAccumulated) : null
-            };
-            sessionLogs[jobSelector.value].push(log);
-            saveData(); renderHistory(); closeModal('saveModal'); resetUI();
-        };
+        row.appendChild(left);
+        row.appendChild(amountEl);
 
-        document.getElementById('cancelSave').onclick = () => { closeModal('saveModal'); resetUI(); };
+        // IMPORTANT: long-press delete uses ORIGINAL index in full history
+        attachLongPressDelete(row, index);
 
-        function resetUI() {
-            actionBtn.textContent = 'START'; actionBtn.classList.remove('active'); breakBtn.classList.remove('active');
-            timerDisplay.textContent = "00:00:00:00"; earningsDisplay.textContent = currentCurrency + "0.00";
-            breakTimerDisplay.classList.remove('visible'); breakTimerDisplay.textContent = "00:00:00:00";
-            document.getElementById('sessionTag').value = ""; document.getElementById('sessionNote').value = "";
+        historyList.appendChild(row);
+      }
+
+      // total updates: if searching, show total for filtered results; otherwise full total
+      renderHistoryTotal(showingSearch ? filtered.map(x => x.item) : history);
+    }
+
+    // ==========================
+    // Bottom sheet behavior
+    // ==========================
+    const overlay = document.getElementById("overlay");
+    const sheet = document.getElementById("sheet");
+    const sheetHeader = document.getElementById("sheetHeader");
+    const sheetBody = document.getElementById("sheetBody");
+
+    let sheetOpen = false;
+    let sheetHeightPx = 0;
+    let peekPx = 0;
+    let openY = 0;
+    let closedY = 0;
+    let currentY = 0;
+
+    function measureSheet(){
+      peekPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sheetPeek")) || 64;
+      sheetHeightPx = Math.round(window.innerHeight * 0.70);
+      sheet.style.height = sheetHeightPx + "px";
+      openY = 0;
+      closedY = Math.max(0, sheetHeightPx - peekPx);
+
+      currentY = sheetOpen ? openY : closedY;
+      setSheetY(currentY, true);
+
+      renderStats();
+      renderPrediction();
+    }
+
+    function setSheetY(y, immediate=false){
+      currentY = Math.min(Math.max(y, openY), closedY);
+
+      if (immediate) sheet.classList.add("no-transition");
+      else sheet.classList.remove("no-transition");
+
+      sheet.style.setProperty("--sheetY", `${currentY}px`);
+
+      const isShown = currentY < (closedY - 1);
+      overlay.classList.toggle("show", isShown);
+      overlay.setAttribute("aria-hidden", String(!isShown));
+
+      if (immediate){
+        requestAnimationFrame(() => sheet.classList.remove("no-transition"));
+      }
+    }
+
+    function openSheet(){ haptic(10); sheetOpen = true; setSheetY(openY, false); }
+    function closeSheet(){
+      haptic(8);
+      sheetOpen = false;
+      setSearchOpen(false); // NEW: close search when closing sheet
+      setSheetY(closedY, false);
+    }
+    function toggleSheet(){ sheetOpen ? closeSheet() : openSheet(); }
+
+    overlay.addEventListener("click", () => closeSheet());
+    sheetHeader.addEventListener("click", () => toggleSheet());
+
+    let dragging = false;
+    let dragStartY = 0;
+    let startSheetY = 0;
+    let allowDrag = false;
+    let dragDy = 0;
+
+    function onPointerDown(e, source){
+      if (source === "header") {
+        allowDrag = true;
+      } else {
+        const inItem = e.target.closest(".history-item");
+        const inSearch = e.target.closest(".sheet-tools-left");
+        allowDrag = !inItem && !inSearch; // NEW: don't start drag when using search controls
+      }
+      if (!allowDrag) return;
+
+      dragging = true;
+      dragDy = 0;
+      sheet.classList.add("no-transition");
+      dragStartY = e.clientY;
+      startSheetY = currentY;
+
+      try { sheet.setPointerCapture(e.pointerId); } catch {}
+    }
+
+    function onPointerMove(e){
+      if (!dragging) return;
+      dragDy = e.clientY - dragStartY;
+      setSheetY(startSheetY + dragDy, true);
+    }
+
+    function onPointerUp(e){
+      if (!dragging) return;
+      dragging = false;
+      sheet.classList.remove("no-transition");
+
+      if (sheetOpen && dragDy > 35) closeSheet();
+      else if (!sheetOpen && dragDy < -35) openSheet();
+      else {
+        const midpoint = (closedY * 0.5);
+        if (currentY < midpoint) openSheet();
+        else closeSheet();
+      }
+
+      try { sheet.releasePointerCapture(e.pointerId); } catch {}
+    }
+
+    sheetHeader.addEventListener("pointerdown", (e) => onPointerDown(e, "header"));
+    sheetBody.addEventListener("pointerdown", (e) => onPointerDown(e, "body"));
+    sheet.addEventListener("pointermove", onPointerMove);
+    sheet.addEventListener("pointerup", onPointerUp);
+    sheet.addEventListener("pointercancel", onPointerUp);
+
+    // ==========================
+    // Save modal behavior
+    // ==========================
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modalSub = document.getElementById("modalSub");
+    const tagInput = document.getElementById("tagInput");
+    const notesInput = document.getElementById("notesInput");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const saveBtn = document.getElementById("saveBtn");
+
+    function openSaveModal(){
+      haptic(10);
+      modalSub.textContent = `Duration: ${pendingDisplay}`;
+      tagInput.value = "";
+      notesInput.value = "";
+
+      modalOverlay.classList.add("show");
+      modalOverlay.setAttribute("aria-hidden", "false");
+      setTimeout(() => tagInput.focus(), 0);
+    }
+
+    function closeSaveModal(){
+      modalOverlay.classList.remove("show");
+      modalOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    function resetAfterStop(){
+      timerEl.textContent = "00:00.00";
+      breakTimerEl.textContent = "00:00.00";
+      earningsFloat.textContent = formatMoney(0);
+
+      pendingDisplay = "00:00.00";
+      pendingClockIn = "";
+      pendingClockOut = "";
+      pendingDate = "";
+      pendingWhenISO = "";
+      pendingAmount = 0;
+      pendingBreaks = [];
+
+      startAtWall = null;
+
+      workAccumMs = 0;
+      workResumePerf = 0;
+
+      currentBreaks = [];
+      breakStartPerf = 0;
+      breakStartWall = null;
+
+      control.classList.remove("onbreak");
+      breakBtn.textContent = "BREAK";
+
+      updateGoalsProgressLive();
+    }
+
+    cancelBtn.addEventListener("click", () => {
+      haptic(8);
+      closeSaveModal();
+      resetAfterStop();
+    });
+
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay){
+        haptic(8);
+        closeSaveModal();
+        resetAfterStop();
+      }
+    });
+
+    saveBtn.addEventListener("click", () => {
+      haptic(14);
+      const tag = tagInput.value;
+      const notes = notesInput.value || "";
+      closeSaveModal();
+      commitStopToHistory(tag, notes);
+    });
+
+    // ==========================
+    // Delete modal behavior (history)
+    // ==========================
+    const deleteOverlay = document.getElementById("deleteOverlay");
+    const deleteDetails = document.getElementById("deleteDetails");
+    const deleteCancelBtn = document.getElementById("deleteCancelBtn");
+    const deleteConfirmBtn = document.getElementById("deleteConfirmBtn");
+    let pendingDeleteIndex = null;
+
+    function escapeHtml(str){
+      return String(str || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function openDeleteModal(index){
+      if (index == null || index < 0 || index >= history.length) return;
+      haptic(12);
+      pendingDeleteIndex = index;
+
+      const item = history[index];
+      const tag = safeTagName(item.tag);
+      const amt = Number.isFinite(Number(item.amount)) ? formatMoney(Number(item.amount)) : formatMoney(0);
+
+      deleteDetails.innerHTML =
+        `<div style="font-weight:900;letter-spacing:0.4px;margin-bottom:6px;">${escapeHtml(tag)}</div>` +
+        `<div style="opacity:0.8;font-variant-numeric:tabular-nums;">${escapeHtml(item.duration || "00:00.00")} · ${escapeHtml(amt)}</div>` +
+        `<div style="opacity:0.65;margin-top:6px;">${escapeHtml((item.clockIn && item.clockOut) ? (item.clockIn + " - " + item.clockOut) : "")}</div>` +
+        `<div style="opacity:0.65;">${escapeHtml(item.date || "")}</div>`;
+
+      deleteOverlay.classList.add("show");
+      deleteOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function closeDeleteModal(){
+      pendingDeleteIndex = null;
+      deleteOverlay.classList.remove("show");
+      deleteOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    deleteCancelBtn.addEventListener("click", () => { haptic(8); closeDeleteModal(); });
+    deleteOverlay.addEventListener("click", (e) => {
+      if (e.target === deleteOverlay) { haptic(8); closeDeleteModal(); }
+    });
+
+    deleteConfirmBtn.addEventListener("click", () => {
+      if (pendingDeleteIndex == null) return;
+      haptic(22);
+      history.splice(pendingDeleteIndex, 1);
+      saveHistory();
+      renderHistory();
+      renderStats();
+      renderPrediction();
+      updateGoalsProgressLive();
+      closeDeleteModal();
+    });
+
+    function attachLongPressDelete(el, index){
+      let t = null;
+      let startX = 0, startY = 0;
+
+      const clear = () => {
+        if (t) clearTimeout(t);
+        t = null;
+      };
+
+      el.addEventListener("pointerdown", (e) => {
+        startX = e.clientX;
+        startY = e.clientY;
+
+        clear();
+        t = setTimeout(() => {
+          clear();
+          openDeleteModal(index);
+        }, 520);
+      });
+
+      el.addEventListener("pointermove", (e) => {
+        const dx = Math.abs(e.clientX - startX);
+        const dy = Math.abs(e.clientY - startY);
+        if (dx > 8 || dy > 8) clear();
+      });
+
+      el.addEventListener("pointerup", clear);
+      el.addEventListener("pointercancel", clear);
+    }
+
+    // ==========================
+    // GOALS (manual targets, progress synced to history + live)
+    // ==========================
+    const goalsWrap = document.getElementById("goalsWrap");
+
+    const GOAL_DEFS = [
+      { key:"daily",    label:"Daily Goal" },
+      { key:"weekly",   label:"Weekly Goal" },
+      { key:"biweekly", label:"Biweekly Goal" },
+      { key:"monthly",  label:"Monthly Goal" },
+      { key:"yearly",   label:"Yearly Goal" }
+    ];
+
+    function startOfDay(d){
+      const x = new Date(d);
+      x.setHours(0,0,0,0);
+      return x;
+    }
+
+    function addDays(d, days){
+      const x = new Date(d);
+      x.setDate(x.getDate() + days);
+      return x;
+    }
+
+    function goalPeriodStart(goalKey, now){
+      const n = startOfDay(now);
+
+      if (goalKey === "daily") return n;
+
+      if (goalKey === "weekly"){
+        const day = n.getDay(); // Sun=0..Sat=6
+        const offset = (day + 6) % 7; // Mon=0..Sun=6
+        return addDays(n, -offset);
+      }
+
+      if (goalKey === "biweekly"){
+        return addDays(n, -13);
+      }
+
+      if (goalKey === "monthly"){
+        const x = new Date(n.getFullYear(), n.getMonth(), 1);
+        x.setHours(0,0,0,0);
+        return x;
+      }
+
+      if (goalKey === "yearly"){
+        const x = new Date(n.getFullYear(), 0, 1);
+        x.setHours(0,0,0,0);
+        return x;
+      }
+
+      return n;
+    }
+
+    function sumHistoryBetween(start, end){
+      const a = start.getTime();
+      const b = end.getTime();
+      let sum = 0;
+
+      for (const item of history){
+        const amt = Number(item.amount);
+        if (!Number.isFinite(amt)) continue;
+
+        if (item.whenISO){
+          const dt = new Date(item.whenISO);
+          if (Number.isNaN(dt.getTime())) continue;
+          const t = dt.getTime();
+          if (t >= a && t <= b) sum += amt;
+        }
+      }
+      return sum;
+    }
+
+    function getGoalsProgressForKey(goalKey){
+      const now = new Date();
+      const start = goalPeriodStart(goalKey, now);
+      const end = now;
+
+      let total = sumHistoryBetween(start, end);
+      if (running) total += getLiveSessionAmount(); // paused during break (work amount frozen)
+
+      return total;
+    }
+
+    function renderGoalsUI(){
+      goalsWrap.innerHTML = "";
+
+      for (const def of GOAL_DEFS){
+        const card = document.createElement("div");
+        card.className = "goal-card";
+        card.dataset.goalKey = def.key;
+
+        const top = document.createElement("div");
+        top.className = "goal-top";
+
+        const left = document.createElement("div");
+        left.style.display = "flex";
+        left.style.flexDirection = "column";
+        left.style.gap = "6px";
+        left.style.minWidth = "0";
+
+        const title = document.createElement("div");
+        title.className = "goal-title";
+        title.textContent = def.label;
+
+        const meta = document.createElement("div");
+        meta.className = "goal-meta";
+        meta.textContent = running ? (onBreak ? "On break (paused)…" : "Syncing history + live…") : "Synced with saved tags";
+
+        left.appendChild(title);
+        left.appendChild(meta);
+        top.appendChild(left);
+
+        const inputRow = document.createElement("div");
+        inputRow.className = "goal-input-row";
+
+        const pill = document.createElement("button");
+        pill.type = "button";
+        pill.className = "goal-target-pill";
+        pill.dataset.goalKey = def.key;
+
+        const targetVal = Number(goalsTargets[def.key]) || 0;
+        const pillLeft = document.createElement("div");
+        pillLeft.textContent = targetVal > 0 ? formatMoney(targetVal) : "Set your goal";
+        pillLeft.style.whiteSpace = "nowrap";
+        pillLeft.style.overflow = "hidden";
+        pillLeft.style.textOverflow = "ellipsis";
+
+        const pillRight = document.createElement("div");
+        pillRight.className = "pill-right";
+        pillRight.textContent = "EDIT";
+
+        pill.appendChild(pillLeft);
+        pill.appendChild(pillRight);
+
+        pill.addEventListener("click", () => openGoalModal(def.key, def.label));
+
+        inputRow.appendChild(pill);
+
+        const progress = document.createElement("div");
+        progress.className = "goal-progress";
+
+        const fill = document.createElement("div");
+        fill.className = "goal-fill";
+        fill.style.width = "0%";
+
+        progress.appendChild(fill);
+
+        const bottom = document.createElement("div");
+        bottom.className = "goal-bottom";
+
+        const bottomLeft = document.createElement("div");
+        bottomLeft.className = "goal-left";
+        bottomLeft.textContent = `${formatMoney(0)} / ${formatMoney(targetVal)}`;
+
+        const bottomRight = document.createElement("div");
+        bottomRight.className = "goal-right";
+        bottomRight.textContent = "0%";
+
+        bottom.appendChild(bottomLeft);
+        bottom.appendChild(bottomRight);
+
+        card.appendChild(top);
+        card.appendChild(inputRow);
+        card.appendChild(progress);
+        card.appendChild(bottom);
+
+        card._meta = meta;
+        card._fill = fill;
+        card._bl = bottomLeft;
+        card._br = bottomRight;
+        card._def = def;
+        card._pillLeft = pillLeft;
+
+        goalsWrap.appendChild(card);
+      }
+
+      updateGoalsProgressLive();
+    }
+
+    function refreshGoalsPills(){
+      const cards = goalsWrap ? goalsWrap.children : [];
+      if (!cards || !cards.length) return;
+
+      for (const card of cards){
+        const def = card._def;
+        if (!def) continue;
+
+        const target = Number(goalsTargets[def.key]) || 0;
+        card._pillLeft.textContent = target > 0 ? formatMoney(target) : "Set your goal";
+      }
+    }
+
+    function updateGoalsProgressLive(){
+      const cards = goalsWrap ? goalsWrap.children : [];
+      if (!cards || !cards.length) return;
+
+      for (const card of cards){
+        const def = card._def;
+        if (!def) continue;
+
+        const current = getGoalsProgressForKey(def.key);
+        const target = Number(goalsTargets[def.key]) || 0;
+
+        let pct = 0;
+        if (target > 0) pct = Math.max(0, Math.min(1, current / target));
+
+        const pctText = Math.round(pct * 100);
+        card._fill.style.width = (pct * 100).toFixed(1) + "%";
+        card._bl.textContent = `${formatMoney(current)} / ${formatMoney(target)}`;
+        card._br.textContent = `${pctText}%`;
+        card._meta.textContent = running ? (onBreak ? "On break (paused)…" : "Syncing history + live…") : "Synced with saved tags";
+      }
+    }
+
+    // Goal modal
+    const goalOverlay = document.getElementById("goalOverlay");
+    const goalTitle = document.getElementById("goalTitle");
+    const goalSub = document.getElementById("goalSub");
+    const goalAmountInput = document.getElementById("goalAmountInput");
+    const goalCancelBtn = document.getElementById("goalCancelBtn");
+    const goalSaveBtn = document.getElementById("goalSaveBtn");
+    let activeGoalKey = null;
+
+    function openGoalModal(key, label){
+      haptic(10);
+      activeGoalKey = key;
+
+      goalTitle.textContent = label;
+      goalSub.textContent = "Enter your target amount";
+      goalAmountInput.placeholder = `${currencySymbol}250.00`;
+
+      const current = Number(goalsTargets[key]) || 0;
+      goalAmountInput.value = current > 0 ? moneyToInput(current) : "";
+
+      goalOverlay.classList.add("show");
+      goalOverlay.setAttribute("aria-hidden", "false");
+      setTimeout(() => goalAmountInput.focus(), 0);
+    }
+
+    function closeGoalModal(){
+      activeGoalKey = null;
+      goalOverlay.classList.remove("show");
+      goalOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    goalCancelBtn.addEventListener("click", () => { haptic(8); closeGoalModal(); });
+    goalOverlay.addEventListener("click", (e) => {
+      if (e.target === goalOverlay) { haptic(8); closeGoalModal(); }
+    });
+
+    goalSaveBtn.addEventListener("click", () => {
+      if (!activeGoalKey) return;
+
+      haptic(14);
+      const v = parseMoneyInput(goalAmountInput.value);
+      goalsTargets[activeGoalKey] = v;
+      saveGoals(goalsTargets);
+
+      refreshGoalsPills();
+      updateGoalsProgressLive();
+
+      closeGoalModal();
+    });
+
+    // ==========================
+    // STATS (unchanged)
+    // ==========================
+    const statSessions = document.getElementById("statSessions");
+    const statSessionsMini = document.getElementById("statSessionsMini");
+    const statTotalEarned = document.getElementById("statTotalEarned");
+    const statTotalEarnedMini = document.getElementById("statTotalEarnedMini");
+    const statMostTag = document.getElementById("statMostTag");
+    const statMostTagMini = document.getElementById("statMostTagMini");
+    const statLeastTag = document.getElementById("statLeastTag");
+    const statLeastTagMini = document.getElementById("statLeastTagMini");
+    const statsEmpty = document.getElementById("statsEmpty");
+
+    const tagLegend = document.getElementById("tagLegend");
+    const tagTable = document.getElementById("tagTable");
+    const pieCenterNum = document.getElementById("pieCenterNum");
+
+    const pieCanvas = document.getElementById("tagPie");
+    const pieCtx = pieCanvas.getContext("2d");
+function computeTagStats(){
+      const map = new Map();
+      let totalEarned = 0;
+
+      for (const item of history){
+        const tag = safeTagName(item.tag);
+        const amt = Number(item.amount);
+        const safeAmt = Number.isFinite(amt) ? amt : 0;
+
+        totalEarned += safeAmt;
+
+        if (!map.has(tag)) map.set(tag, { tag, count: 0, amount: 0 });
+        const obj = map.get(tag);
+        obj.count += 1;
+        obj.amount += safeAmt;
+      }
+
+      const arr = Array.from(map.values());
+      arr.sort((a,b) => (b.count - a.count) || (b.amount - a.amount) || a.tag.localeCompare(b.tag));
+
+      return { arr, totalEarned, totalSessions: history.length };
+    }
+
+    function drawPie(statsArr){
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = pieCanvas.getBoundingClientRect();
+      const w = Math.max(10, Math.floor(rect.width));
+      const h = Math.max(10, Math.floor(rect.height));
+
+      pieCanvas.width = Math.floor(w * dpr);
+      pieCanvas.height = Math.floor(h * dpr);
+
+      pieCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      pieCtx.clearRect(0, 0, w, h);
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const r = Math.min(w, h) * 0.36;
+      const ring = Math.min(w, h) * 0.44;
+
+      pieCtx.beginPath();
+      pieCtx.arc(cx, cy, ring, 0, Math.PI * 2);
+      pieCtx.fillStyle = "rgba(255,255,255,0.04)";
+      pieCtx.fill();
+
+      const total = statsArr.reduce((s,x) => s + x.count, 0);
+      if (total <= 0) return;
+
+      let start = -Math.PI / 2;
+
+      for (const s of statsArr){
+        const frac = s.count / total;
+        const end = start + frac * Math.PI * 2;
+
+        pieCtx.beginPath();
+        pieCtx.moveTo(cx, cy);
+        pieCtx.arc(cx, cy, ring, start, end);
+        pieCtx.closePath();
+        pieCtx.fillStyle = tagColor(s.tag);
+        pieCtx.globalAlpha = 0.95;
+        pieCtx.fill();
+
+        pieCtx.globalAlpha = 1;
+        pieCtx.strokeStyle = "rgba(0,0,0,0.35)";
+        pieCtx.lineWidth = 1;
+        pieCtx.stroke();
+
+        start = end;
+      }
+
+      pieCtx.beginPath();
+      pieCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      pieCtx.fillStyle = "rgba(0,0,0,0.92)";
+      pieCtx.fill();
+
+      pieCtx.strokeStyle = "rgba(255,255,255,0.10)";
+      pieCtx.lineWidth = 1;
+      pieCtx.stroke();
+    }
+
+    function renderLegend(statsArr){
+      tagLegend.innerHTML = "";
+
+      if (!statsArr.length){
+        tagLegend.innerHTML = `<div class="hint" style="margin:0;padding:8px 6px;">No tags yet.</div>`;
+        return;
+      }
+
+      const total = statsArr.reduce((s,x) => s + x.count, 0);
+
+      for (const s of statsArr){
+        const row = document.createElement("div");
+        row.className = "legend-item";
+
+        const left = document.createElement("div");
+        left.className = "legend-left";
+
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        dot.style.background = tagColor(s.tag);
+
+        const name = document.createElement("div");
+        name.className = "legend-tag";
+        name.textContent = s.tag;
+
+        left.appendChild(dot);
+        left.appendChild(name);
+
+        const right = document.createElement("div");
+        right.className = "legend-right";
+        const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
+        right.textContent = `${s.count} • ${pct}%`;
+
+        row.appendChild(left);
+        row.appendChild(right);
+
+        tagLegend.appendChild(row);
+      }
+    }
+
+    function renderTagTable(statsArr){
+      tagTable.innerHTML = "";
+
+      if (!statsArr.length){
+        tagTable.innerHTML = `<div class="hint" style="margin:0;padding:8px 6px;">No tags yet.</div>`;
+        return;
+      }
+
+      for (const s of statsArr){
+        const row = document.createElement("div");
+        row.className = "tag-row";
+
+        const left = document.createElement("div");
+        left.className = "tag-row-left";
+
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        dot.style.background = tagColor(s.tag);
+
+        const nameWrap = document.createElement("div");
+        nameWrap.className = "tag-row-name";
+
+        const title = document.createElement("div");
+        title.className = "tag-row-title";
+        title.textContent = s.tag;
+
+        const sub = document.createElement("div");
+        sub.className = "tag-row-sub";
+        sub.textContent = `${s.count} session${s.count === 1 ? "" : "s"}`;
+
+        nameWrap.appendChild(title);
+        nameWrap.appendChild(sub);
+
+        left.appendChild(dot);
+        left.appendChild(nameWrap);
+
+        const amt = document.createElement("div");
+        amt.className = "tag-row-amount";
+        amt.textContent = formatMoney(s.amount);
+
+        row.appendChild(left);
+        row.appendChild(amt);
+
+        tagTable.appendChild(row);
+      }
+    }
+
+    function renderStats(){
+      const { arr, totalEarned, totalSessions } = computeTagStats();
+
+      const showEmpty = totalSessions === 0;
+      statsEmpty.style.display = showEmpty ? "block" : "none";
+
+      statSessions.textContent = String(totalSessions);
+      statSessionsMini.textContent = showEmpty ? "No data yet" : "Based on saved history";
+
+      statTotalEarned.textContent = formatMoney(totalEarned);
+      statTotalEarnedMini.textContent = showEmpty ? "—" : "History total across all tags";
+
+      pieCenterNum.textContent = String(totalSessions);
+
+      if (!arr.length){
+        statMostTag.textContent = "—";
+        statMostTagMini.textContent = "—";
+        statLeastTag.textContent = "—";
+        statLeastTagMini.textContent = "—";
+        drawPie([]);
+        renderLegend([]);
+        renderTagTable([]);
+        return;
+      }
+
+      const most = arr[0];
+      const least = arr[arr.length - 1];
+
+      statMostTag.textContent = most.tag;
+      statMostTagMini.textContent = `${most.count} session${most.count === 1 ? "" : "s"} • ${formatMoney(most.amount)}`;
+
+      statLeastTag.textContent = least.tag;
+      statLeastTagMini.textContent = `${least.count} session${least.count === 1 ? "" : "s"} • ${formatMoney(least.amount)}`;
+
+      drawPie(arr);
+      renderLegend(arr);
+      renderTagTable(arr);
+    }
+
+    // ==========================
+    // PREDICTIONS (unchanged)
+    // ==========================
+    const predCapDate = document.getElementById("predCapDate");
+    const predChips = document.getElementById("predChips");
+    const predSubtitle = document.getElementById("predSubtitle");
+    const predList = document.getElementById("predList");
+    const predEmpty = document.getElementById("predEmpty");
+
+    function daysInclusive(start, end){
+      const a = startOfDay(start).getTime();
+      const b = startOfDay(end).getTime();
+      if (b < a) return 0;
+      return Math.floor((b - a) / 86400000) + 1;
+    }
+
+    function fmtShortDate(d){
+      return d.toLocaleDateString(undefined, { day:"2-digit", month:"short" });
+    }
+
+    function fmtLongDate(d){
+      return d.toLocaleDateString(undefined, { day:"2-digit", month:"short", year:"numeric" });
+    }
+
+    function buildDayTotalsInWindow(windowDays, now){
+      const endDay = startOfDay(now);
+      const startDay = addDays(endDay, -(windowDays - 1));
+
+      const map = new Map();
+      for (const item of history){
+        if (!item.whenISO) continue;
+        const dt = new Date(item.whenISO);
+        if (Number.isNaN(dt.getTime())) continue;
+
+        const day = startOfDay(dt);
+        if (day < startDay || day > endDay) continue;
+
+        const key = day.toISOString().slice(0,10);
+        const amt = Number(item.amount);
+        const safeAmt = Number.isFinite(amt) ? amt : 0;
+        map.set(key, (map.get(key) || 0) + safeAmt);
+      }
+
+      let total = 0;
+      let activeDays = 0;
+      for (let i = 0; i < windowDays; i++){
+        const day = addDays(startDay, i);
+        const key = day.toISOString().slice(0,10);
+        const v = map.get(key) || 0;
+        total += v;
+        if (v > 0) activeDays += 1;
+      }
+
+      const avgPerDay = windowDays > 0 ? total / windowDays : 0;
+      return { windowDays, total, activeDays, avgPerDay };
+    }
+
+    function buildAllTimeWindow(now){
+      if (!history.length) return { windowDays: 0, total: 0, activeDays: 0, avgPerDay: 0 };
+
+      let min = null;
+      for (const item of history){
+        if (!item.whenISO) continue;
+        const dt = new Date(item.whenISO);
+        if (Number.isNaN(dt.getTime())) continue;
+        const day = startOfDay(dt);
+        if (!min || day < min) min = day;
+      }
+      if (!min) return { windowDays: 0, total: 0, activeDays: 0, avgPerDay: 0 };
+
+      const endDay = startOfDay(now);
+      let span = daysInclusive(min, endDay);
+      if (span <= 0) span = 1;
+
+      const cap = Math.min(span, 365);
+      return buildDayTotalsInWindow(cap, now);
+    }
+
+    function blendAverages(w7, w30, wall){
+      const have7  = w7.windowDays > 0;
+      const have30 = w30.windowDays > 0;
+      const haveA  = wall.windowDays > 0;
+
+      let a = 0, b = 0, c = 0;
+      let sumW = 0;
+
+      if (have7){  a = 0.50; sumW += a; }
+      if (have30){ b = 0.30; sumW += b; }
+      if (haveA){  c = 0.20; sumW += c; }
+
+      if (sumW <= 0) return { avg: 0, weights: {a:0,b:0,c:0} };
+
+      a /= sumW; b /= sumW; c /= sumW;
+
+      const avg = (w7.avgPerDay * a) + (w30.avgPerDay * b) + (wall.avgPerDay * c);
+      return { avg, weights: { a, b, c } };
+    }
+
+    function calcYearEnd(now){
+      const y = now.getFullYear();
+      const end = new Date(y, 11, 31, 23, 59, 59, 999);
+      return end;
+    }
+
+    function endOfMonth(now){
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      return new Date(y, m + 1, 0, 23, 59, 59, 999);
+    }
+
+    function clipEndDate(desiredEnd, yearEnd){
+      return desiredEnd > yearEnd ? yearEnd : desiredEnd;
+    }
+
+    function chip(text, ok=true){
+      const c = document.createElement("div");
+      c.className = ok ? "chip" : "chip warn";
+      const dot = document.createElement("div");
+      dot.className = "chip-dot";
+      const t = document.createElement("div");
+      t.textContent = text;
+      c.appendChild(dot);
+      c.appendChild(t);
+      return c;
+    }
+
+    function renderPrediction(){
+      predList.innerHTML = "";
+      predChips.innerHTML = "";
+      predEmpty.style.display = history.length ? "none" : "block";
+
+      const now = new Date();
+      const yearEnd = calcYearEnd(now);
+      predCapDate.textContent = fmtLongDate(yearEnd);
+
+      if (!history.length){
+        predSubtitle.textContent = "—";
+        return;
+      }
+
+      const w7 = buildDayTotalsInWindow(7, now);
+      const w30 = buildDayTotalsInWindow(30, now);
+      const wall = buildAllTimeWindow(now);
+
+      const blended = blendAverages(w7, w30, wall);
+      const avgPerDay = blended.avg;
+
+      const avgPerActiveDay30 = w30.activeDays > 0 ? (w30.total / w30.activeDays) : 0;
+      const activeRate30 = 30 > 0 ? (w30.activeDays / 30) : 0;
+      const trend = (w30.avgPerDay > 0) ? ((w7.avgPerDay - w30.avgPerDay) / w30.avgPerDay) : 0;
+
+      predChips.appendChild(chip(`Avg / day (blended): ${formatMoney(avgPerDay)}`, avgPerDay > 0));
+      predChips.appendChild(chip(`30d active days: ${w30.activeDays}/30`, w30.activeDays > 0));
+      predChips.appendChild(chip(`Avg on work day (30d): ${formatMoney(avgPerActiveDay30)}`, avgPerActiveDay30 > 0));
+      predChips.appendChild(chip(`Work frequency (30d): ${Math.round(activeRate30 * 100)}%`, true));
+
+      const trendPct = Math.round(trend * 100);
+      if (Number.isFinite(trend) && Math.abs(trendPct) >= 5){
+        const up = trendPct > 0;
+        predChips.appendChild(chip(`Trend vs 30d: ${up ? "+" : ""}${trendPct}%`, up));
+      } else {
+        predChips.appendChild(chip(`Trend vs 30d: stable`, true));
+      }
+
+      const today = startOfDay(now);
+      const yearEndDay = startOfDay(yearEnd);
+      const daysToYearEnd = daysInclusive(today, yearEndDay);
+
+      predSubtitle.textContent =
+        `Forecast window: ${fmtLongDate(today)} → ${fmtLongDate(yearEndDay)} (${daysToYearEnd} day${daysToYearEnd === 1 ? "" : "s"})`;
+
+      const periods = [];
+      periods.push({ name: "Daily", start: today, end: clipEndDate(today, yearEndDay) });
+      periods.push({ name: "Weekly", start: today, end: clipEndDate(addDays(today, 6), yearEndDay) });
+      periods.push({ name: "Biweekly", start: today, end: clipEndDate(addDays(today, 13), yearEndDay) });
+      periods.push({ name: "Monthly", start: today, end: clipEndDate(startOfDay(endOfMonth(now)), yearEndDay) });
+      periods.push({ name: "Year (to Dec 31)", start: today, end: yearEndDay });
+
+      for (const p of periods){
+        const days = daysInclusive(p.start, p.end);
+        const amount = avgPerDay * days;
+
+        const row = document.createElement("div");
+        row.className = "pred-row";
+
+        const left = document.createElement("div");
+        left.className = "pred-left";
+
+        const title = document.createElement("div");
+        title.className = "pred-title";
+        title.textContent = p.name;
+
+        const sub = document.createElement("div");
+        sub.className = "pred-sub";
+        sub.textContent = `${fmtShortDate(p.start)} → ${fmtShortDate(p.end)} • ${days} day${days === 1 ? "" : "s"}`;
+
+        left.appendChild(title);
+        left.appendChild(sub);
+
+        const amt = document.createElement("div");
+        amt.className = "pred-amount";
+        amt.textContent = formatMoney(amount);
+
+        row.appendChild(left);
+        row.appendChild(amt);
+
+        predList.appendChild(row);
+      }
+    }
+
+    // ==========================
+    // Calendar helpers + UI (unchanged)
+    // ==========================
+    function pad2(n){ return String(n).padStart(2, "0"); }
+
+    function toDateKey(d){
+      const x = new Date(d);
+      x.setHours(0,0,0,0);
+      return `${x.getFullYear()}-${pad2(x.getMonth()+1)}-${pad2(x.getDate())}`;
+    }
+
+    function fromDateKey(key){
+      const [y,m,dd] = String(key).split("-").map(Number);
+      const d = new Date(y, (m||1)-1, dd||1);
+      d.setHours(0,0,0,0);
+      return d;
+    }
+
+    function monthLabel(d){
+      return d.toLocaleDateString(undefined, { month:"long", year:"numeric" }).toUpperCase();
+    }
+
+    function dowMon0(jsDay){
+      return (jsDay + 6) % 7;
+    }
+
+    function getJobsForKey(key){
+      return calendarJobs
+        .filter(j => j.dateKey === key)
+        .sort((a,b) => (a.startTime || "").localeCompare(b.startTime || "") || (a.createdAt || "").localeCompare(b.createdAt || ""));
+    }
+
+    function countJobsForKey(key){
+      let c = 0;
+      for (const j of calendarJobs) if (j.dateKey === key) c++;
+      return c;
+    }
+
+    function formatKeyNice(key){
+      const d = fromDateKey(key);
+      return d.toLocaleDateString(undefined, { weekday:"short", day:"2-digit", month:"short", year:"numeric" });
+    }
+
+    const calMonthLabel = document.getElementById("calMonthLabel");
+    const calDaysEl = document.getElementById("calDays");
+    const calPrev = document.getElementById("calPrev");
+    const calNext = document.getElementById("calNext");
+    const calToday = document.getElementById("calToday");
+    const calAddBtn = document.getElementById("calAddBtn");
+    const calList = document.getElementById("calList");
+    const calEmptyHint = document.getElementById("calEmptyHint");
+    const calSelectedTitle = document.getElementById("calSelectedTitle");
+    const calSelectedSub = document.getElementById("calSelectedSub");
+
+    let calSelectedKey = toDateKey(new Date());
+
+    function renderCalendar(){
+      calMonthLabel.textContent = monthLabel(calMonth);
+      renderCalendarGrid();
+      renderCalendarList();
+    }
+
+    function renderCalendarGrid(){
+      calDaysEl.innerHTML = "";
+
+      const year = calMonth.getFullYear();
+      const month = calMonth.getMonth();
+
+      const first = new Date(year, month, 1);
+      const firstDow = dowMon0(first.getDay());
+
+      const start = new Date(year, month, 1 - firstDow);
+      start.setHours(0,0,0,0);
+
+      const todayKey = toDateKey(new Date());
+      const selectedKey = calSelectedKey;
+
+      for (let i = 0; i < 42; i++){
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        d.setHours(0,0,0,0);
+
+        const key = toDateKey(d);
+        const inMonth = d.getMonth() === month;
+
+        const cell = document.createElement("div");
+        cell.className = "cal-day";
+        if (!inMonth) cell.classList.add("muted");
+        if (key === todayKey) cell.classList.add("today");
+        if (key === selectedKey) cell.classList.add("selected");
+
+        const num = document.createElement("div");
+        num.className = "cal-num";
+        num.textContent = String(d.getDate());
+
+        const dots = document.createElement("div");
+        dots.className = "cal-dots";
+
+        const c = countJobsForKey(key);
+        const dotCount = Math.min(3, c);
+        for (let k = 0; k < 3; k++){
+          const dot = document.createElement("div");
+          dot.className = "cal-dot" + (k < dotCount ? " on" : "");
+          dots.appendChild(dot);
         }
 
-        function updateUI() {
-            const now = Date.now();
-            if (!isPaused) {
-                const elapsed = now - startTime - totalPausedAccumulated;
-                const earnings = (parseFloat(rateInput.value) || 0) / 3600000 * elapsed;
-                timerDisplay.textContent = formatTime(elapsed);
-                earningsDisplay.textContent = currentCurrency + earnings.toFixed(2);
-            } else {
-                const currentBreak = now - breakStartTime;
-                breakTimerDisplay.textContent = formatTime(currentBreakSession + currentBreak);
-            }
-        }
+        cell.appendChild(num);
+        cell.appendChild(dots);
 
-        function formatTime(ms) { const s = Math.floor(ms / 1000); return [Math.floor(s/3600), Math.floor((s%3600)/60), s%60, Math.floor((ms%1000)/10)].map(v => v.toString().padStart(2,'0')).join(':'); }
-        function renderHistory() {
-            historyList.innerHTML = "";
-            const logs = sessionLogs[jobSelector.value] || [];
-            logs.slice().reverse().forEach(l => {
-                const card = document.createElement('div'); card.className = 'history-card';
-                card.innerHTML = `<div><div class="tag-name">${l.tag}</div><div class="meta-text">${l.start} — ${l.end} | ${l.date}</div>${l.breakVal ? `<div style="color:var(--red); font-size:0.7rem; font-weight:bold; margin-top:5px">BREAK: ${l.breakVal}</div>` : ''}${l.note ? `<div style="font-size:0.85rem; color:#888; margin-top:5px; font-style:italic">${l.note}</div>` : ''}</div><div style="text-align:right"><div class="amount-text">${l.earnings}</div><div class="meta-text">${l.duration}</div></div>`;
-                historyList.appendChild(card);
-            });
-        }
+        cell.addEventListener("click", () => {
+          haptic(10);
+          calSelectedKey = key;
+          renderCalendar();
+        });
 
-        document.getElementById('dashboard').onclick = (e) => { if(e.target.closest('.dashboard-handle') && !e.target.closest('#addJobBtn')) dashboard.classList.toggle('expanded'); };
-        init();
-    </script>
+        calDaysEl.appendChild(cell);
+      }
+    }
+
+    function renderCalendarList(){
+      calList.innerHTML = "";
+
+      const jobs = getJobsForKey(calSelectedKey);
+
+      calSelectedTitle.textContent = "Scheduled Jobs";
+      calSelectedSub.textContent = `${formatKeyNice(calSelectedKey)} • ${jobs.length} job${jobs.length === 1 ? "" : "s"}`;
+
+      if (!jobs.length){
+        calEmptyHint.style.display = "block";
+        return;
+      }
+      calEmptyHint.style.display = "none";
+
+      for (const job of jobs){
+        const row = document.createElement("div");
+        row.className = "cal-item";
+
+        const left = document.createElement("div");
+        left.className = "cal-left";
+
+        const title = document.createElement("div");
+        title.className = "cal-job";
+        title.textContent = job.title || "Work Job";
+
+        const time = document.createElement("div");
+        time.className = "cal-time";
+        const st = (job.startTime || "").trim();
+        const et = (job.endTime || "").trim();
+        time.textContent = (st && et) ? `${st} - ${et}` : (st ? `Starts ${st}` : (et ? `Ends ${et}` : "Time not set"));
+
+        const notes = document.createElement("div");
+        notes.className = "cal-notes";
+        notes.textContent = (job.notes || "").trim();
+
+        left.appendChild(title);
+        left.appendChild(time);
+        if (notes.textContent) left.appendChild(notes);
+
+        const del = document.createElement("button");
+        del.className = "del-btn";
+        del.type = "button";
+        del.textContent = "×";
+        del.setAttribute("aria-label", "Delete job");
+        del.addEventListener("click", () => openJobDeleteModal(job.id));
+
+        row.appendChild(left);
+        row.appendChild(del);
+
+        calList.appendChild(row);
+      }
+    }
+
+    calPrev.addEventListener("click", () => {
+      haptic(10);
+      calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1);
+      calMonth.setHours(0,0,0,0);
+      renderCalendar();
+    });
+
+    calNext.addEventListener("click", () => {
+      haptic(10);
+      calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1);
+      calMonth.setHours(0,0,0,0);
+      renderCalendar();
+    });
+
+    calToday.addEventListener("click", () => {
+      haptic(10);
+      const t = new Date();
+      calMonth = new Date(t.getFullYear(), t.getMonth(), 1);
+      calMonth.setHours(0,0,0,0);
+      calSelectedKey = toDateKey(t);
+      renderCalendar();
+    });
+
+    calAddBtn.addEventListener("click", () => { haptic(10); openJobModalForKey(calSelectedKey); });
+
+    const jobOverlay = document.getElementById("jobOverlay");
+    const jobSub = document.getElementById("jobSub");
+    const jobTitleInput = document.getElementById("jobTitleInput");
+    const jobDateInput = document.getElementById("jobDateInput");
+    const jobStartInput = document.getElementById("jobStartInput");
+    const jobEndInput = document.getElementById("jobEndInput");
+    const jobNotesInput = document.getElementById("jobNotesInput");
+    const jobCancelBtn = document.getElementById("jobCancelBtn");
+    const jobSaveBtn = document.getElementById("jobSaveBtn");
+
+    function openJobModalForKey(key){
+      const nice = formatKeyNice(key);
+      jobSub.textContent = `Scheduling for ${nice}`;
+
+      jobTitleInput.value = "";
+      jobDateInput.value = key;
+      jobStartInput.value = "";
+      jobEndInput.value = "";
+      jobNotesInput.value = "";
+
+      jobOverlay.classList.add("show");
+      jobOverlay.setAttribute("aria-hidden", "false");
+      setTimeout(() => jobTitleInput.focus(), 0);
+    }
+
+    function closeJobModal(){
+      jobOverlay.classList.remove("show");
+      jobOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    jobCancelBtn.addEventListener("click", () => { haptic(8); closeJobModal(); });
+    jobOverlay.addEventListener("click", (e) => {
+      if (e.target === jobOverlay) { haptic(8); closeJobModal(); }
+    });
+
+    function makeId(){
+      return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+    }
+
+    jobSaveBtn.addEventListener("click", () => {
+      haptic(14);
+      const title = (jobTitleInput.value || "").trim() || "Work Job";
+      const dateKey = (jobDateInput.value || "").trim() || calSelectedKey;
+      const startTime = (jobStartInput.value || "").trim();
+      const endTime = (jobEndInput.value || "").trim();
+      const notes = (jobNotesInput.value || "").trim();
+
+      let st = startTime, et = endTime;
+      if (st && et && et < st){
+        const tmp = st; st = et; et = tmp;
+      }
+
+      calendarJobs.push({
+        id: makeId(),
+        title,
+        dateKey,
+        startTime: st,
+        endTime: et,
+        notes,
+        createdAt: new Date().toISOString()
+      });
+
+      saveCalendar();
+
+      calSelectedKey = dateKey;
+      const d = fromDateKey(dateKey);
+      calMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+      calMonth.setHours(0,0,0,0);
+
+      closeJobModal();
+      renderCalendar();
+    });
+
+    const jobDeleteOverlay = document.getElementById("jobDeleteOverlay");
+    const jobDeleteDetails = document.getElementById("jobDeleteDetails");
+    const jobDeleteCancelBtn = document.getElementById("jobDeleteCancelBtn");
+    const jobDeleteConfirmBtn = document.getElementById("jobDeleteConfirmBtn");
+    let pendingJobDeleteId = null;
+
+    function openJobDeleteModal(id){
+      const job = calendarJobs.find(j => j.id === id);
+      if (!job) return;
+
+      haptic(12);
+      pendingJobDeleteId = id;
+
+      const timeLine = (job.startTime && job.endTime) ? `${job.startTime} - ${job.endTime}` :
+                       (job.startTime ? `Starts ${job.startTime}` : (job.endTime ? `Ends ${job.endTime}` : `Time not set`));
+
+      jobDeleteDetails.innerHTML =
+        `<div style="font-weight:900;letter-spacing:0.4px;margin-bottom:6px;">${escapeHtml(job.title || "Work Job")}</div>` +
+        `<div style="opacity:0.8;font-variant-numeric:tabular-nums;">${escapeHtml(formatKeyNice(job.dateKey))}</div>` +
+        `<div style="opacity:0.7;margin-top:6px;">${escapeHtml(timeLine)}</div>` +
+        (job.notes ? `<div style="opacity:0.7;margin-top:6px;">${escapeHtml(job.notes)}</div>` : "");
+
+      jobDeleteOverlay.classList.add("show");
+      jobDeleteOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function closeJobDeleteModal(){
+      pendingJobDeleteId = null;
+      jobDeleteOverlay.classList.remove("show");
+      jobDeleteOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    jobDeleteCancelBtn.addEventListener("click", () => { haptic(8); closeJobDeleteModal(); });
+    jobDeleteOverlay.addEventListener("click", (e) => {
+      if (e.target === jobDeleteOverlay) { haptic(8); closeJobDeleteModal(); }
+    });
+
+    jobDeleteConfirmBtn.addEventListener("click", () => {
+      if (!pendingJobDeleteId) return;
+      haptic(22);
+      calendarJobs = calendarJobs.filter(j => j.id !== pendingJobDeleteId);
+      saveCalendar();
+      closeJobDeleteModal();
+      renderCalendar();
+    });
+
+    // ==========================
+    // Init
+    // ==========================
+    function init(){
+      earningsFloat.textContent = formatMoney(0);
+      renderHistory();
+      renderStats();
+      renderPrediction();
+
+      measureSheet();
+      closeSheet();
+
+      currencySelect.value = currencySymbol;
+      applyToggleUI();
+
+      updateGoalsProgressLive();
+
+      const t = new Date();
+      calMonth = new Date(t.getFullYear(), t.getMonth(), 1);
+      calMonth.setHours(0,0,0,0);
+      calSelectedKey = toDateKey(t);
+    }
+
+    window.addEventListener("resize", measureSheet);
+    init();
+  </script>
 </body>
 </html>
